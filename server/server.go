@@ -66,18 +66,20 @@ func(s *ServerState) run() {
 			if _, exists := s.users[userState.UserName]; !exists {
 				//user does not exist, create a new role as a member for the user
 				member := UserFactory(userState.UserName, common.RoleMember)
-				resp.Role = member
+				resp.Role = common.RoleMember
+				resp.RoleObj = member
 				resp.Message = "Welcome to the server!\n"
 				resp.Status = true
 				//TODO add initalization of the general chatroom, with a RoomInfo type
 
 				//add user to the map of all users on the server
-				s.users[userState.UserName] = member
+				//s.users[userState.UserName] = member
 
 			//if the username does exist, return the role to the user
 			} else {
 				role := UserFactory(userState.UserName, s.users[userState.UserName].Role)
-				resp.Role = role
+				resp.Role = s.users[userState.UserName].Role
+				resp.RoleObj = role
 				if role != common.RoleBanned {
 					resp.Message = "Welcome back to the server!\n"
 					resp.Status = true
@@ -87,7 +89,7 @@ func(s *ServerState) run() {
 				}
 			}
 			//send response
-			userState.Response <- resp
+			userState.Response <- &resp
 			
 
 		//server management of rooms 
@@ -106,3 +108,17 @@ func(s *ServerState) run() {
 }
 
 
+//join server RPC stub
+func (s *ServerState) JoinServer(username string, reply *common.JoinResponse) error {
+    replyCh := make(chan *common.JoinResponse)
+	//create join request
+    req := &common.JoinRequest{UserName: username, Response: replyCh}
+
+    // Send to the server's state goroutine
+    s.recvUser <- req
+    // Wait for the server to respond
+	temp := <-replyCh
+	*reply = *temp
+
+    return nil
+}
