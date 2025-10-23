@@ -1,10 +1,12 @@
 package server
 
-import "multi-room_chat_system/common"
+import (
+	
+)
 
 
-type AdminRequest struct {
-	Action common.AdminRequest
+type AdminReq struct {
+	Action AdminRequest
 	Reply chan AdminResponse
 }
 
@@ -16,32 +18,28 @@ type AdminResponse struct {
 
 type User struct {
 	Username string
-	Role common.Role
+	Role Role
 }
 
 type Member struct {
 	User //inherits user
+	//current room
+	CurrentRoom string
+	//channels from the server
+	ToServer chan MsgMetadata
+	RecvServer chan ExecutableMessage
+	//channel to send end to user state
+	Term chan struct{}
+
 	//rooms a user can join
-	AvailableRooms []common.RoomInfo
+	AvailableRooms []string
 	//commands the memeber can execute
 	Permissions []string
 }
 
-type Admin struct {
-	Member //inherits member
-	//channel to request from the server as an admin
-	adminReq chan AdminRequest
-
-}
-
-type Owner struct {
-	Admin	//inherits admin
-	//chanel to get all admins
-	reqAdmin chan []*Admin
-}
 
 //function to define user
-func defUser(username string, role common.Role) *User {
+func defUser(username string, role Role) *User {
 	return &User{
 		Username: username,
 		Role: role,
@@ -49,45 +47,54 @@ func defUser(username string, role common.Role) *User {
 }
 
 //function to define member
-func defMember(username string, role common.Role) *Member {
-	return &Member {
-		User: *defUser(username, role),
-		AvailableRooms: []common.RoomInfo{},
-		Permissions: []string{},		
+func defMember(username string, role Role) *Member {
+	if role == RoleBanned {
+		return &Member {
+				User: *defUser(username, role),
+		}
+	} else {
+		return &Member {
+			User: *defUser(username, role),
+			CurrentRoom: "",
+			AvailableRooms: []string{"#general"},
+			ToServer: make(chan MsgMetadata),
+			RecvServer: make(chan ExecutableMessage),
+			Term: make(chan struct{}),
+			Permissions: []string{"/join", "/leave", "/listusers", "/help"},		
+		}
 	}
 }
 
 //function to define admin
-func defAdmin(username string, role common.Role) *Admin {
-	return &Admin{
-		Member: *defMember(username, role),
-		adminReq: make(chan AdminRequest),
-	}
+func defAdmin(username string, role Role) *Member {
+	member := *defMember(username, role)
+	member.AvailableRooms = append(member.AvailableRooms, "#staff")
+	member.Permissions = append(member.Permissions, "/kick", "/ban", "/createRoom", "/deleteRoom")
+	return &member
 }
 
 //function to define owner
-func defOwner(username string, role common.Role) *Owner {
-	return &Owner{
-		Admin: *defAdmin(username, role),
-		reqAdmin: make(chan []*Admin),
-	}
+func defOwner(username string, role Role) *Member {
+	admin := *defAdmin(username, role)
+	admin.Permissions = append(admin.Permissions, "/promote", "/demote")
+	return &admin
 }
 
 //user factory to return the correct user type to the server
-func UserFactory(name string, role common.Role) interface{} {
+func UserFactory(name string, role Role) *Member {
 	//return type of member
-	if role == common.RoleMember {
+	if role == RoleMember {
 		return defMember(name, role)
 	//return type of admin
-	} else if role == common.RoleAdmin {
+	} else if role == RoleAdmin {
 		return defAdmin(name, role)
 	//return type of owner
-	} else if role == common.RoleOwner {
+	} else if role == RoleOwner {
 		return defOwner(name, role)
 	//return type of user if banned
 	} else {
 		//override role to indicate banned
-		role = common.RoleBanned
-		return defUser(name, role)
+		role = RoleBanned
+		return defMember(name, role)
 	}
 }

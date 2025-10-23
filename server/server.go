@@ -3,26 +3,36 @@ package server
 import (
 	"log"
 	"sync"
-	"multi-room_chat_system/common"
+	"time"
 )
 
 //internal state for the server
 type ServerState struct {
 	//map usernames to Members
-	users map[string]*User
+	users map[string]*Member
 	//map roomName to chatRoom
 	rooms map[string]*Room
 	//logger
-	logger *Logger
+	//logger *Logger
 	//server configuration
-	config *Config
+	//config *Config
 	//server dispatcher
-	dispatcher *Dispatcher
-	//channels to receive information
-	recvUser chan *common.JoinRequest
+	//dispatcher *Dispatcher
+
+	//channels to receive/respond user joins 
+	recvUser chan ServerJoinRequest
+	joinResp chan *ServerJoinResponse
+
 	recvRoom chan *Room
-	recvLogger chan *Logger
-	recvDispatcher chan *Dispatcher
+	
+	recvInput chan *MsgMetadata
+	ackInput chan *ExecutableMessage
+
+	//recvLogger chan *Logger
+	//recvDispatcher chan *Dispatcher
+
+	//channel to handle joining rooms
+	recvJoinReq chan JoinRoomReq
 }
 
 //singleton instance for the server
@@ -41,16 +51,25 @@ func GetServerState() *ServerState {
 func initServer() {
 	log.Println("Starting server")
 	instance = &ServerState{
-		users: map[string]*User{},
+		users: map[string]*Member{},
 		rooms: map[string]*Room{},
-		logger: &Logger{},
-		config: &Config{},
-		dispatcher: &Dispatcher{},
-		recvUser: make(chan *common.JoinRequest),
+		//logger: &Logger{},
+		//config: &Config{},
+		//dispatcher: &Dispatcher{},
+		//channels for joining users
+		recvUser: make(chan ServerJoinRequest),
+		joinResp: make(chan *ServerJoinResponse),
+
 		recvRoom: make(chan *Room),
-		recvLogger: make(chan *Logger),
-		recvDispatcher: make(chan *Dispatcher),
+		//channels for message input
+		recvInput: make(chan *MsgMetadata),
+		ackInput: make(chan *ExecutableMessage),
+		//recvLogger: make(chan *Logger),
+		//recvDispatcher: make(chan *Dispatcher),
 	}
+	//create initial rooms
+	instance.createRoom("#general")
+	instance.createRoom("#staff")
 	//start goroutine to run server
 	go instance.run()	
 	
@@ -61,64 +80,101 @@ func(s *ServerState) run() {
 		select {
 		//server management of users
 		case userState := <-s.recvUser:
-			resp := common.JoinResponse{}
-			//first check to see if this user already exists
-			if _, exists := s.users[userState.UserName]; !exists {
-				//user does not exist, create a new role as a member for the user
-				member := UserFactory(userState.UserName, common.RoleMember)
-				resp.Role = common.RoleMember
-				resp.RoleObj = member
-				resp.Message = "Welcome to the server!\n"
-				resp.Status = true
-				//TODO add initalization of the general chatroom, with a RoomInfo type
-
-				//add user to the map of all users on the server
-				//s.users[userState.UserName] = member
-
-			//if the username does exist, return the role to the user
+			//response variable
+			var resp ServerJoinResponse
+			//check if user exists
+			username := string(userState)
+			if _, exists := s.users[username]; !exists {
+				//if dne create a new user of type member
+				newUser := UserFactory(username, RoleMember)
+				//add new user to the server state
+				s.users[username] = newUser
+				resp = ServerJoinResponse{
+					Status: true,
+					Message: "Welcome to the server!\n",
+					Role: newUser,
+				}
+			//if user already exists
 			} else {
-				role := UserFactory(userState.UserName, s.users[userState.UserName].Role)
-				resp.Role = s.users[userState.UserName].Role
-				resp.RoleObj = role
-				if role != common.RoleBanned {
-					resp.Message = "Welcome back to the server!\n"
-					resp.Status = true
+				if s.users[username].Role != RoleBanned {
+					resp = ServerJoinResponse{
+						Status: true,
+						Message: "Welcome back to the server!\n",
+						Role: s.users[username],
+					}
 				} else {
-					resp.Message = "You are banned from the server!\n"
-					resp.Status = false
+					resp = ServerJoinResponse{
+						Status: false,
+						Message: "You are banned!\n",
+						Role: s.users[username],
+					}
 				}
 			}
 			//send response
-			userState.Response <- &resp
-			
+			s.joinResp <- &resp
+		//server receives raw input from a client
+		case input := <-s.recvInput:
+			//add timestamp to metadata
+			input.Timestamp = time.Now()
+			//get user's current room
 
-		//server management of rooms 
-		//case roomState := <-s.recvRoom:
-			//temp
-		//server management of logging
-		//case log := <-s.recvLogger:
-			//temp
-		//server management of dispatching
-		//case dispatch := <-s.recvDispatcher:
-			//temp
+			//call message factory
+			msg := MessageFactory(*input, s)
+			//execute the msg
+			msg.ExecuteServer(s)
+			//ack the RPC
+			s.ackInput <- &msg
+
 		default:
 		}
 	}
 
 }
 
+//helper function to create a room
+func (s *ServerState) createRoom(roomName string) {
+	if _, exists := s.rooms[roomName]; exists {
+		log.Println("Error: room already exists!")
+		return
+	}
+	//initialize the room's state
+	newRoom := Room{
+		users: make(map[string]*Member),
+		log: make([]Message, 0),
+	}
+	//add new room to the server's state
+	s.rooms[roomName] = &newRoom
+}
+
+//helper function to remove a room
+func (s *ServerState) deleteRoom(roomName string) {
+	if _, exists := s.rooms[roomName]; !exists {
+		log.Println("Error: room does not exist!")
+		return
+	}
+	//remove it from the server's state
+	delete(s.rooms, roomName)
+}
+
 
 //join server RPC stub
-func (s *ServerState) JoinServer(username string, reply *common.JoinResponse) error {
-    replyCh := make(chan *common.JoinResponse)
+func (s *ServerState) JoinServer(username string, reply *ServerJoinResponse) error {
 	//create join request
-    req := &common.JoinRequest{UserName: username, Response: replyCh}
-
+    req := ServerJoinRequest(username)
     // Send to the server's state goroutine
     s.recvUser <- req
     // Wait for the server to respond
-	temp := <-replyCh
+	temp := <-s.joinResp
 	*reply = *temp
-
     return nil
+}
+
+//receive input RPC stub
+func (s *ServerState) RecvMessage(input *MsgMetadata, reply *ExecutableMessage) error {
+	//send metadata to the server
+	s.recvInput <- input
+	//wait for ack
+	resp := <- s.ackInput
+	*reply = *resp
+	return nil
 }
