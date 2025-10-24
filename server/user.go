@@ -98,3 +98,23 @@ func UserFactory(name string, role Role) *Member {
 		return defMember(name, role)
 	}
 }
+
+func getUsage(role Role) []string {
+	var usage []string
+	if role >= RoleMember {
+		usage = append(usage, "/join {room}")
+		usage = append(usage, "/leave")
+		usage = append(usage, "/listusers")
+	}
+	if role >= RoleAdmin {
+		usage = append(usage, "/kick {user}")
+		usage = append(usage, "/ban {user}")
+		usage = append(usage, "/createRoom {roomName} {rolePermission}")
+		usage = append(usage, "/deleteRoom {roomName}")
+	}
+	if role >= RoleOwner {
+		usage = append(usage, "/promote {user}")
+		usage = append(usage, "/demote {user}")
+	}
+	return usage
+}

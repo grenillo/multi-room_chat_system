@@ -32,11 +32,13 @@ func CommandFactory (input MsgMetadata, s *ServerState) ExecutableMessage {
 		join := &JoinCmd{MsgMetadata: input, Room: room}
 		return join
 	case "/leave":
-		return nil
+		return &LeaveCmd{MsgMetadata: input}
 	case "/listusers":
-		return nil
+		return &ListUsersCmd{MsgMetadata: input}
+	case "/help":
+		return &HelpCmd{MsgMetadata: input, Invalid: false}
 	default:
-		return nil
+		return &HelpCmd{MsgMetadata: input, Invalid: true}
 	}
 }
 
@@ -82,7 +84,8 @@ func (m *Message) ExecuteClient() {
 	fmt.Println(formatMessage(m))
 	
 }
-///////////////////////////// END MESSAGE and its execute functions /////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////// JOIN CMD and its execute functions //////////////////////////////
 type JoinCmd struct {
@@ -153,7 +156,7 @@ func (j *JoinCmd) ExecuteClient() {
 		fmt.Println(formatMessage(&msg))
 	}
 }
-////////////////////////// END JOIN CMD and its execute functions //////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////// LEAVE CMD and its execute functions //////////////////////////////
@@ -186,12 +189,76 @@ func (l *LeaveCmd) ExecuteClient() {
 	clearScreen()
 	fmt.Println("=======LEFT ROOM ", l.Room,"=======")	
 }
-//////////////////////////// END LEAVE CMD and its execute functions ////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//////////////////////////// LISTUSERS CMD and its execute functions ////////////////////////////
+type ListUsersCmd struct {
+	MsgMetadata
+	Reply LUResp
+}
+type LUResp struct {
+	ResponseMD
+	Room string
+	Users []string
+}
+func (lu *ListUsersCmd) ExecuteServer(s* ServerState) {
+	//check to see if a user is in a room
+	if _, exists := s.rooms[s.users[lu.UserName].CurrentRoom]; !exists {
+		lu.Reply.Status = false
+		lu.Reply.ErrMsg = "PERMISSION DENIED: User not in room"
+		return
+	}
+	//get the list of users from a room
+	lu.Reply.Users = mapToSlice(s.rooms[lu.UserName].users)
+	lu.Reply.Status = true
+	lu.Reply.Room = s.users[lu.UserName].CurrentRoom
+}
 
+func (lu *ListUsersCmd) ExecuteClient() {
+	if !lu.Reply.Status {
+		fmt.Println(lu.Reply.ErrMsg)
+		return
+	}
+	//if successful print the current room and its users to the client
+	fmt.Println("=======CURRENT USERS IN ROOM ",lu.Reply.Room,"=======")
+	for _, user := range lu.Reply.Users {
+		fmt.Println(user)
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+////////////////////////////// HELP CMD and its execute functions ///////////////////////////////
+type HelpCmd struct {
+	MsgMetadata
+	Invalid bool
+	Reply HelpResp
+}
+type HelpResp struct {
+	ResponseMD
+	Usage []string
+}
+func (h *HelpCmd) ExecuteServer(s* ServerState) {
+	if h.Invalid {
+		h.Reply.Status = false
+		h.Reply.ErrMsg = "PERMISSION DENIED: Invalid command, enter /help for more information"
+	}
+	//get the usage for this user's role
+	h.Reply.Status = true
+	h.Reply.Usage = getUsage(s.users[h.UserName].Role)
+}
+func (h *HelpCmd) ExecuteClient() {
+	if h.Invalid {
+		fmt.Println(h.Reply.ErrMsg)
+		return
+	}
+	fmt.Println("=======USER COMMAND USAGE=======")	
+	//print the commands for this user
+	for _, cmd := range h.Reply.Usage {
+		fmt.Println(cmd)
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //HELPER FUNCTIONS
