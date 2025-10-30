@@ -7,50 +7,57 @@ import (
 	"strings"
 )
 
-func HandleConnection(conn net.Conn, s *ServerState) {
+//function to synchronously check a user's connection before allowing them to input commands to the server
+func handleNewConnection(conn net.Conn) {
 	//setup new reader and writer
 	reader := bufio.NewReader(conn)
     writer := bufio.NewWriter(conn)
-
 	//prompt user for username
-	writer.WriteString("Enter your username: ")
+	writer.WriteString("Enter your username: \n>")
 	writer.Flush()
-
 	//read the entered username
 	username, err := reader.ReadString('\n')
 	if err != nil {
         fmt.Println("Failed to read username:", err)
         return
     }
-	//format username
-	username = strings.TrimSpace(username)
-	joinResp := &ServerJoinResponse{}
-	s.JoinServer(username, joinResp)
-
-	//print message from the server
-	writer.WriteString(joinResp.Message)
-	writer.Flush()
-
-	//if banned, end the connection
-	if joinResp.Role.Role == RoleBanned {
-		return
-	} 
-	//not banned, allow user to join rooms, starting in no room
-	//start listening for input from user
-	userInput := make(chan string)
-	go getInput(reader, userInput, joinResp.Role.Term)
+	//get server state
+	s := GetServerState()
+	//send JoinRPC to the server state
+	resp := &ServerJoinResponse{}
+	s.JoinServer(username, resp)
+	//if user is banned
+	if !resp.Status {
+		writer.WriteString(resp.Message)
+        writer.Flush()
+        conn.Close()
+        return
+	}
+	//otherwise start goroutine to handle client requests
+	go handleConnection(conn, resp.Role, reader)
 	
+	
+}
+
+//function to asynchronously handle connections once they are verified
+func handleConnection(conn net.Conn, user *Member, reader *bufio.Reader) {
+	//get server state (for RPCs)
+	s := GetServerState()
+	//start listener goroutine to listen for user input
+	userInput := make(chan string)
+	go getUserInput(reader, user, userInput)
+
 	for {
 		select{
 		//listen for commands from the server/room
-		case msg := <- joinResp.Role.RecvServer:
+		case msg := <-user.RecvServer:
 			//run server/room command
 			msg.ExecuteClient()
 			
 		//listen for input from the user
 		case input := <-userInput:
 			//convert raw input to metadata (no timestamp)
-			rawInput := MsgMetadata{UserName: username, Content: input}
+			rawInput := MsgMetadata{UserName: user.Username, Content: input}
 			//send raw data to server
 			var reply ExecutableMessage
 			s.RecvMessage(&rawInput, &reply)
@@ -58,26 +65,32 @@ func HandleConnection(conn net.Conn, s *ServerState) {
 			reply.ExecuteClient()
 			
 		//if user/server is terminated
-		case <- joinResp.Role.Term:
+		case <-user.Term:
+			conn.Close()
 			return
 		}
 	}
+
 }
 
-func getInput(reader *bufio.Reader,userInput chan string, term chan struct{}) {
+func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 	for {
 		select {
 		//if the termination channel is called for a user, terminate reader goroutine
-		case <-term:
+		case <-user.Term:
 			return
 		default:
+			//read line from client
 			line, err := reader.ReadString('\n')
+			//detect if client disconnects
 			if err != nil {
-				fmt.Println("Error reading input:", err)
-				close(userInput)
+				fmt.Println("Client disconnected")
+				close(user.Term)
 				return
 			}
+			//format input
 			input := strings.TrimSpace(line)
+			//send input to handleConnection
 			userInput <- input
 		}
 	}
