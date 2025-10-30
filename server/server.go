@@ -32,7 +32,7 @@ type ServerState struct {
 	//recvDispatcher chan *Dispatcher
 
 	//channel to handle joining rooms
-	recvJoinReq chan JoinRoomReq
+	//recvJoinReq chan JoinRoomReq
 }
 
 //singleton instance for the server
