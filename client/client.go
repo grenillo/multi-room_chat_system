@@ -65,10 +65,10 @@ func outputFromServer(conn net.Conn,  term chan struct{}) {
 	}
 }
 
-func recvExecutableMsg(conn net.Conn,  term chan struct{}) shared.ClientExecutable {
+func recvExecutableMsg(conn net.Conn,  term chan struct{}) shared.ExecutableMessage{
 	decoder := gob.NewDecoder(conn)
 	//create new message to return
-	var msg shared.ClientExecutable
+	var msg shared.ExecutableMessage
 	err := decoder.Decode(&msg)
 	if err != nil {
 		fmt.Println("Error decoding message from server:", err)

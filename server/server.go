@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"multi-room_chat_system/shared"
 	"sync"
 	"time"
 )
@@ -24,9 +25,8 @@ type ServerState struct {
 	joinResp chan *ServerJoinResponse
 
 	recvRoom chan *Room
-	
-	recvInput chan *MsgMetadata
-	ackInput chan *ExecutableMessage
+	recvInput chan *shared.MsgMetadata
+	ackInput chan *shared.ExecutableMessage
 
 	//recvLogger chan *Logger
 	//recvDispatcher chan *Dispatcher
@@ -62,8 +62,8 @@ func initServer() {
 
 		recvRoom: make(chan *Room),
 		//channels for message input
-		recvInput: make(chan *MsgMetadata),
-		ackInput: make(chan *ExecutableMessage),
+		recvInput: make(chan *shared.MsgMetadata),
+		ackInput: make(chan *shared.ExecutableMessage),
 		//recvLogger: make(chan *Logger),
 		//recvDispatcher: make(chan *Dispatcher),
 	}
@@ -121,7 +121,7 @@ func(s *ServerState) run() {
 			//call message factory
 			msg := MessageFactory(*input, s)
 			//execute the msg
-			msg.ExecuteServer(s)
+			msg.ExecuteServer()
 			//ack the RPC
 			s.ackInput <- &msg
 
@@ -140,7 +140,7 @@ func (s *ServerState) createRoom(roomName string) {
 	//initialize the room's state
 	newRoom := Room{
 		users: make(map[string]*Member),
-		log: make([]Message, 0),
+		log: make([]shared.Message, 0),
 	}
 	//add new room to the server's state
 	s.rooms[roomName] = &newRoom
@@ -170,7 +170,7 @@ func (s *ServerState) JoinServer(username string, reply *ServerJoinResponse) err
 }
 
 //receive input RPC stub
-func (s *ServerState) RecvMessage(input *MsgMetadata, reply *ExecutableMessage) error {
+func (s *ServerState) RecvMessage(input *shared.MsgMetadata, reply *shared.ExecutableMessage) error {
 	//send metadata to the server
 	s.recvInput <- input
 	//wait for ack

@@ -1,8 +1,6 @@
 package server
 
-import (
-	
-)
+import "multi-room_chat_system/shared"
 
 
 type AdminReq struct {
@@ -26,8 +24,8 @@ type Member struct {
 	//current room
 	CurrentRoom string
 	//channels from the server
-	ToServer chan MsgMetadata
-	RecvServer chan ExecutableMessage
+	ToServer chan shared.MsgMetadata
+	RecvServer chan shared.ExecutableMessage
 	//channel to send end to user state
 	Term chan struct{}
 
@@ -57,8 +55,8 @@ func defMember(username string, role Role) *Member {
 			User: *defUser(username, role),
 			CurrentRoom: "",
 			AvailableRooms: []string{"#general"},
-			ToServer: make(chan MsgMetadata),
-			RecvServer: make(chan ExecutableMessage),
+			ToServer: make(chan shared.MsgMetadata),
+			RecvServer: make(chan shared.ExecutableMessage),
 			Term: make(chan struct{}),
 			Permissions: []string{"/join", "/leave", "/listusers", "/help"},		
 		}

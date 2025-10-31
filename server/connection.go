@@ -2,7 +2,9 @@ package server
 
 import (
 	"bufio"
+	"encoding/gob"
 	"fmt"
+	"multi-room_chat_system/shared"
 	"net"
 	"strings"
 )
@@ -53,13 +55,14 @@ func handleConnection(conn net.Conn, user *Member, reader *bufio.Reader) {
 		case msg := <-user.RecvServer:
 			//run server/room command
 			msg.ExecuteClient()
+			//send client a response
 			
 		//listen for input from the user
 		case input := <-userInput:
 			//convert raw input to metadata (no timestamp)
-			rawInput := MsgMetadata{UserName: user.Username, Content: input}
+			rawInput := shared.MsgMetadata{UserName: user.Username, Content: input}
 			//send raw data to server
-			var reply ExecutableMessage
+			var reply shared.ExecutableMessage
 			s.RecvMessage(&rawInput, &reply)
 			//once have response run the .executeClient
 			reply.ExecuteClient()
@@ -94,4 +97,14 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 			userInput <- input
 		}
 	}
+}
+
+func forwardToClient(conn net.Conn, msg shared.ExecutableMessage) error {
+	encoder := gob.NewEncoder(conn)
+	err := encoder.Encode(msg)
+	if err != nil {
+        fmt.Println("Error sending ExecutableMessage:", err)
+        return err
+    }
+    return nil
 }

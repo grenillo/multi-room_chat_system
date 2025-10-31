@@ -3,103 +3,71 @@ package server
 import (
 	"fmt"
 	"strings"
-	"time"
+	"multi-room_chat_system/shared"
 )
 
-//define all methods a message should have
-type ExecutableMessage interface {
-	ExecuteServer(s *ServerState) //broadcast or command functionality
-	ExecuteClient()
-
-}
-
-func MessageFactory(input MsgMetadata, s *ServerState) ExecutableMessage {
+func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	//send to command factory
 	if input.Content[0] == '/' {
 		return CommandFactory(input, s)
 	}
 	//otherwise return message
-	return &Message{MsgMetadata: input}
+	return &Message{Message: &shared.Message{MsgMetadata: input}}
 }
 
-func CommandFactory (input MsgMetadata, s *ServerState) ExecutableMessage {
+func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	parts := strings.Fields(input.Content)
 	switch parts[0] {
 	case "/join":
 		//get current room for the user
 		room := s.users[input.UserName].CurrentRoom
 		//add metadata to the join type
-		join := &JoinCmd{MsgMetadata: input, Room: room}
+		join := &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input, Room: room}}
 		return join
 	case "/leave":
-		return &LeaveCmd{MsgMetadata: input}
+		return &LeaveCmd{LeaveCmd: &shared.LeaveCmd{MsgMetadata: input}}
 	case "/listusers":
-		return &ListUsersCmd{MsgMetadata: input}
+		return &ListUsersCmd{ListUsersCmd: &shared.ListUsersCmd{MsgMetadata: input}}
 	case "/help":
-		return &HelpCmd{MsgMetadata: input, Invalid: false}
+		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: false}}
 	default:
-		return &HelpCmd{MsgMetadata: input, Invalid: true}
+		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
 }
 
-type ResponseMD struct {
-	Status bool
-	ErrMsg string
-}
-
-type MsgMetadata struct {
-	UserName string
-	Timestamp time.Time
-	Content string
-}
-
 /////////////////////////////// MESSAGE and its execute functions ///////////////////////////////
+
 type Message struct {
-	MsgMetadata
-	Response ResponseMD
+	*shared.Message
 }
 
-func (m *Message) ExecuteServer(s *ServerState) {
-	var resp ResponseMD
+func (m *Message) ExecuteServer() {
+	s := GetServerState()
+	var resp shared.ResponseMD
 	//check that user is in this room
 	result := contains(mapToSlice(s.users), m.UserName)
 	if !result {
-		resp = ResponseMD{Status: false, ErrMsg: "PERMISSION DENIED: User is not currently in a room"}
+		resp = shared.ResponseMD{Status: false, ErrMsg: "PERMISSION DENIED: User is not currently in a room"}
 		m.Response = resp
 		return
 	}
 	//user in room, broadcast to all other users
-	resp = ResponseMD{Status: true}
+	resp = shared.ResponseMD{Status: true}
 	m.Response = resp
 	s.rooms[s.users[m.UserName].CurrentRoom].broadcast(m)
 }
 
-func (m *Message) ExecuteClient() {
-	//check if message was sent
-	if !m.Response.Status {
-		fmt.Println(m.Response.ErrMsg)
-		return
-	}
-	//otherwise, print to our client's local terminal
-	fmt.Println(formatMessage(m))
-	
-}
+func (m *Message) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////// JOIN CMD and its execute functions //////////////////////////////
 type JoinCmd struct {
-	MsgMetadata //inherits metadata
-	Room string
-	Reply JoinResp
+	*shared.JoinCmd
 }
 
-type JoinResp struct {
-	ResponseMD	//inherits
-	Log []Message
-}
-
-func (j *JoinCmd) ExecuteServer(s *ServerState) {
+func (j *JoinCmd) ExecuteServer() {
+	s := GetServerState()
 	//first check that the room exists
 	result := contains(mapToSlice(s.rooms), j.Room)
 	if !result {
@@ -143,30 +111,17 @@ func (j *JoinCmd) ExecuteServer(s *ServerState) {
 	j.Reply.Log = s.rooms[j.Room].log
 
 }
-
-func (j *JoinCmd) ExecuteClient() {
-	if !j.Reply.Status {
-		fmt.Println(j.Reply.ErrMsg)
-		return
-	}
-	clearScreen()
-	fmt.Println("=======JOINED ROOM ", j.Room, "=======")
-	//print out entire message history to client
-	for _, msg := range j.Reply.Log {
-		fmt.Println(formatMessage(&msg))
-	}
-}
+func (j *JoinCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////// LEAVE CMD and its execute functions //////////////////////////////
 type LeaveCmd struct {
-	MsgMetadata
-	Room string
-	Reply ResponseMD
+	*shared.LeaveCmd
 }
 
-func (l *LeaveCmd) ExecuteServer(s *ServerState) {
+func (l *LeaveCmd) ExecuteServer() {
+	s := GetServerState()
 	//check to see if the user is in a room
 	if _, exists := s.rooms[s.users[l.UserName].CurrentRoom]; !exists {
 		l.Reply.Status = false
@@ -181,28 +136,17 @@ func (l *LeaveCmd) ExecuteServer(s *ServerState) {
 	l.Reply.Status = true
 }
 
-func (l *LeaveCmd) ExecuteClient() {
-	if !l.Reply.Status {
-		fmt.Println(l.Reply.ErrMsg)
-		return
-	}
-	clearScreen()
-	fmt.Println("=======LEFT ROOM ", l.Room,"=======")	
-}
+func (l *LeaveCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////// LISTUSERS CMD and its execute functions ////////////////////////////
 type ListUsersCmd struct {
-	MsgMetadata
-	Reply LUResp
+	*shared.ListUsersCmd
 }
-type LUResp struct {
-	ResponseMD
-	Room string
-	Users []string
-}
-func (lu *ListUsersCmd) ExecuteServer(s* ServerState) {
+
+func (lu *ListUsersCmd) ExecuteServer() {
+	s := GetServerState()
 	//check to see if a user is in a room
 	if _, exists := s.rooms[s.users[lu.UserName].CurrentRoom]; !exists {
 		lu.Reply.Status = false
@@ -215,30 +159,16 @@ func (lu *ListUsersCmd) ExecuteServer(s* ServerState) {
 	lu.Reply.Room = s.users[lu.UserName].CurrentRoom
 }
 
-func (lu *ListUsersCmd) ExecuteClient() {
-	if !lu.Reply.Status {
-		fmt.Println(lu.Reply.ErrMsg)
-		return
-	}
-	//if successful print the current room and its users to the client
-	fmt.Println("=======CURRENT USERS IN ROOM ",lu.Reply.Room,"=======")
-	for _, user := range lu.Reply.Users {
-		fmt.Println(user)
-	}
-}
+func (lu *ListUsersCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////// HELP CMD and its execute functions ///////////////////////////////
 type HelpCmd struct {
-	MsgMetadata
-	Invalid bool
-	Reply HelpResp
+	*shared.HelpCmd
 }
-type HelpResp struct {
-	ResponseMD
-	Usage []string
-}
-func (h *HelpCmd) ExecuteServer(s* ServerState) {
+
+func (h *HelpCmd) ExecuteServer() {
+	s := GetServerState()
 	if h.Invalid {
 		h.Reply.Status = false
 		h.Reply.ErrMsg = "PERMISSION DENIED: Invalid command, enter /help for more information"
@@ -247,17 +177,7 @@ func (h *HelpCmd) ExecuteServer(s* ServerState) {
 	h.Reply.Status = true
 	h.Reply.Usage = getUsage(s.users[h.UserName].Role)
 }
-func (h *HelpCmd) ExecuteClient() {
-	if h.Invalid {
-		fmt.Println(h.Reply.ErrMsg)
-		return
-	}
-	fmt.Println("=======USER COMMAND USAGE=======")	
-	//print the commands for this user
-	for _, cmd := range h.Reply.Usage {
-		fmt.Println(cmd)
-	}
-}
+func (h *HelpCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -281,12 +201,4 @@ func mapToSlice[V any](m map[string]V) []string {
 
 func clearScreen() {
     fmt.Print("\033[2J\033[H")
-}
-
-func formatMessage(m *Message) string{
-	var resp string
-	//convert timestamp to string
-	time := m.Timestamp.Format("2006-01-02 15:04:05")
-	resp = time + "\t" + m.UserName + ":  " + m.Content
-	return resp
 }

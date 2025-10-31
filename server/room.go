@@ -1,14 +1,14 @@
 package server
 
 import(
-	//"multi-room_chat_system/common"
+	"multi-room_chat_system/shared"
 )
 
 type Room struct {
 	//active users
 	users map[string]*Member
 	//log of messages
-	log []Message
+	log []shared.Message
 	//required room permission
 	permission Role
 }

@@ -1,5 +1,7 @@
 package server
 
+import "multi-room_chat_system/shared"
+
 type Role int
 const (
 	RoleBanned Role = iota
@@ -40,6 +42,6 @@ type ServerToClient struct {
 type JoinRoomResp struct { //room response to join request (room -> client)
 	Status bool
 	History []string
-	ToUser chan ExecutableMessage
+	ToUser chan shared.ExecutableMessage
 }
 
