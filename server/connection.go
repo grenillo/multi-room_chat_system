@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/gob"
 	"fmt"
+	"log"
 	"multi-room_chat_system/shared"
 	"net"
 	"strings"
@@ -64,11 +65,15 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 
 		//listen for input from the user
 		case input := <-userInput:
+			log.Println("client connectionHandler reveived:", input)
 			//convert raw input to metadata (no timestamp)
 			rawInput := shared.MsgMetadata{UserName: user.Username, Content: input}
 			//send raw data to server
 			var reply shared.ExecutableMessage
+			log.Println("client connectionHandler sent to server:", input)
 			s.RecvMessage(&rawInput, &reply)
+			log.Println("client connectionHandler recv response from server for :", input)
+
 			//once have response, forward to client
 			forwardToClient(encoder, reply)
 			
@@ -98,6 +103,7 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 			}
 			//format input
 			input := strings.TrimSpace(line)
+			log.Println("received client input:",input)
 			//send input to handleConnection
 			userInput <- input
 		}
@@ -105,10 +111,29 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 }
 
 func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
-	err := encoder.Encode(msg)
+	//unwrap the server to the shared type to send to client
+	concrete := unwrapShared(msg)
+	err := encoder.Encode(&concrete)
 	if err != nil {
         fmt.Println("Error sending ExecutableMessage:", err)
         return err
     }
     return nil
+}
+
+func unwrapShared(msg interface{}) interface{} {
+    switch m := msg.(type) {
+    case *HelpCmd:
+        return m.HelpCmd       // *shared.HelpCmd
+    case *JoinCmd:
+        return m.JoinCmd       // *shared.JoinCmd
+    case *LeaveCmd:
+        return m.LeaveCmd      // *shared.LeaveCmd
+    case *ListUsersCmd:
+        return m.ListUsersCmd  // *shared.ListUsersCmd
+    case *Message:
+        return m.Message       // *shared.Message
+    default:
+        panic("error during unwrapping: unknown command type")
+    }
 }

@@ -97,13 +97,30 @@ func outputFromServer(conn net.Conn,  term chan struct{}) {
 
 func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage{
 	//create new message to return
-	var msg shared.ExecutableMessage
-	err := decoder.Decode(msg)
+	var msg interface{}
+	err := decoder.Decode(&msg)
 	if err != nil {
 		fmt.Println("Error decoding message from server:", err)
         close(term) // terminate client if decoding fails
         return nil
 	}
 	//otherwise return executable to client
-	return msg
+	return wrapShared(msg)
+}
+
+func wrapShared(msg interface{}) shared.ExecutableMessage {
+	switch m := msg.(type) {
+    case *shared.HelpCmd:
+		return &HelpCmd{HelpCmd: m}
+	case *shared.JoinCmd:
+		return &JoinCmd{JoinCmd: m}
+	case *shared.LeaveCmd:
+		return &LeaveCmd{LeaveCmd: m}
+	case *shared.ListUsersCmd:
+		return &ListUsersCmd{ListUsersCmd: m}
+	case *shared.Message:
+		return &Message{Message: m}
+    default:
+        panic("error during wrapping: unknown shared type")
+    }
 }

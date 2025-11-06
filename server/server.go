@@ -117,10 +117,10 @@ func(s *ServerState) run() {
 		case input := <-s.recvInput:
 			//add timestamp to metadata
 			input.Timestamp = time.Now()
-			//get user's current room
-
+			log.Println("server received:", input.Content)
 			//call message factory
 			msg := MessageFactory(*input, s)
+			log.Println("server generated factory object for:", input.Content)
 			//execute the msg
 			msg.ExecuteServer()
 			//ack the RPC
@@ -181,3 +181,4 @@ func (s *ServerState) RecvMessage(input *shared.MsgMetadata, reply *shared.Execu
 	*reply = *resp
 	return nil
 }
+
