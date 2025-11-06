@@ -9,12 +9,12 @@ type ExecutableMessage interface {
 	ExecuteClient()
 }
 
-func init() {
+func Init() {
 	gob.Register(&Message{})
 	gob.Register(&JoinCmd{})
 	gob.Register(&LeaveCmd{})
 	gob.Register(&ListUsersCmd{})
-	gob.Register(&HelpResp{})
+	gob.Register(&HelpCmd{})
 }
 
 type MsgMetadata struct {

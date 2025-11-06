@@ -15,7 +15,7 @@ func handleNewConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
     writer := bufio.NewWriter(conn)
 	//prompt user for username
-	writer.WriteString("Enter your username: \n>")
+	writer.WriteString("Enter your username: ")
 	writer.Flush()
 	//read the entered username
 	username, err := reader.ReadString('\n')
@@ -35,28 +35,33 @@ func handleNewConnection(conn net.Conn) {
         conn.Close()
         return
 	}
+	//send confirmation
+	writer.WriteString(resp.Message)
+    writer.Flush()
 	//otherwise start goroutine to handle client requests
-	go handleConnection(conn, resp.Role, reader)
+	go handleConnection(reader, conn, resp.Role)
 	
 	
 }
 
 //function to asynchronously handle connections once they are verified
-func handleConnection(conn net.Conn, user *Member, reader *bufio.Reader) {
-	//get server state (for RPCs)
-	s := GetServerState()
+func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 	//start listener goroutine to listen for user input
 	userInput := make(chan string)
 	go getUserInput(reader, user, userInput)
+	//get server state (for RPCs)
+	s := GetServerState()
+	//create encoder for gob usage
+	encoder := gob.NewEncoder(conn)
+	//start listener goroutine to listen for user input
 
 	for {
 		select{
 		//listen for commands from the server/room
 		case msg := <-user.RecvServer:
-			//run server/room command
-			msg.ExecuteClient()
-			//send client a response
-			
+			//send client a response from the server
+			forwardToClient(encoder, msg)
+
 		//listen for input from the user
 		case input := <-userInput:
 			//convert raw input to metadata (no timestamp)
@@ -64,8 +69,8 @@ func handleConnection(conn net.Conn, user *Member, reader *bufio.Reader) {
 			//send raw data to server
 			var reply shared.ExecutableMessage
 			s.RecvMessage(&rawInput, &reply)
-			//once have response run the .executeClient
-			reply.ExecuteClient()
+			//once have response, forward to client
+			forwardToClient(encoder, reply)
 			
 		//if user/server is terminated
 		case <-user.Term:
@@ -99,8 +104,7 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 	}
 }
 
-func forwardToClient(conn net.Conn, msg shared.ExecutableMessage) error {
-	encoder := gob.NewEncoder(conn)
+func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
 	err := encoder.Encode(msg)
 	if err != nil {
         fmt.Println("Error sending ExecutableMessage:", err)

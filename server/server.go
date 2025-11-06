@@ -49,6 +49,7 @@ func GetServerState() *ServerState {
 
 //function to initialize the server state, and starts up the goroutine that manages server state
 func initServer() {
+	shared.Init()
 	log.Println("Starting server")
 	instance = &ServerState{
 		users: map[string]*Member{},
@@ -105,7 +106,7 @@ func(s *ServerState) run() {
 				} else {
 					resp = ServerJoinResponse{
 						Status: false,
-						Message: "You are banned!\n",
+						Message: "PERMISSION DENIED: You are banned!\n",
 						Role: s.users[username],
 					}
 				}
@@ -147,6 +148,7 @@ func (s *ServerState) createRoom(roomName string) {
 }
 
 //helper function to remove a room
+/*
 func (s *ServerState) deleteRoom(roomName string) {
 	if _, exists := s.rooms[roomName]; !exists {
 		log.Println("Error: room does not exist!")
@@ -155,6 +157,7 @@ func (s *ServerState) deleteRoom(roomName string) {
 	//remove it from the server's state
 	delete(s.rooms, roomName)
 }
+*/
 
 
 //join server RPC stub

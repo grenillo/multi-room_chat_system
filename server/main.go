@@ -6,7 +6,8 @@ import (
 	"fmt"
 )
 
-func main() {
+func StartServer() {
+	GetServerState() //se
 	//setup listener tcp socket on port 5461
 	listener, err := net.Listen("tcp", ":5461")
 	//if fail to setup socket
@@ -22,6 +23,7 @@ func main() {
 			log.Println("Failed to accept connection:", err)
 			continue
 		}
+		fmt.Println("Accepted connection", conn)
 		handleNewConnection(conn)
 	}
 }	

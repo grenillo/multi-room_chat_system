@@ -10,9 +10,11 @@ import (
 	"strings"
 )
 
-func main() {
+func StartClient() {
+	//register types with gob for tcp
+	shared.Init()
 	//connect to the server
-	conn, err := net.Dial("tcp", "localhost:4561")
+	conn, err := net.Dial("tcp", "localhost:5461")
 	if err != nil {
 		panic(err)
 	}
@@ -21,13 +23,39 @@ func main() {
 
 	//channl for termination
 	term := make(chan struct{})
+	fmt.Println("Term chan created")
+
+	//read initial username prompt from server
+	serverReader := bufio.NewReader(conn)
+	prompt, _ := serverReader.ReadString(':')
+	fmt.Print(prompt, " ")
+	var username string
+	fmt.Scanln(&username)
+	//send to server
+	_, err = conn.Write([]byte(username + "\n"))
+	if err != nil {
+		fmt.Println("Failed to send username:", err)
+		close(term)
+		return
+	}
+	//read response
+	resp, _ := serverReader.ReadString('\n')
+	fmt.Print(resp)
+	if strings.Contains(resp, "PERMISSION DENIED") {
+		close(term)
+		return
+	}
 
 	//create goroutines to continuously listen for input and server responses
 	go getInput(conn, term)
+	fmt.Println("input stream created")
 	go outputFromServer(conn, term) // ensures recvExecutableMsg is used
+	fmt.Println("output stream created")
 
 	//block main from immediately exiting
+	fmt.Println("blocked from exiting")
 	<-term
+	fmt.Println("unblocked from exiting")
 
 }
 
@@ -44,18 +72,20 @@ func getInput(conn net.Conn,  term chan struct{}) {
 			return
 		}
 		input := strings.TrimSpace(line)
+		fmt.Println("sending to server input: ", input)
 		fmt.Fprintln(conn, input)
 	}
 }
 
 func outputFromServer(conn net.Conn,  term chan struct{}) {
+	decoder := gob.NewDecoder(conn)
 	for {
 		select {
 		case <-term:
 			return
 		default:
 			//receive and decode executable message from server
-			msg := recvExecutableMsg(conn, term)
+			msg := recvExecutableMsg(term, decoder)
 			if msg == nil {
                 return
             }
@@ -65,11 +95,10 @@ func outputFromServer(conn net.Conn,  term chan struct{}) {
 	}
 }
 
-func recvExecutableMsg(conn net.Conn,  term chan struct{}) shared.ExecutableMessage{
-	decoder := gob.NewDecoder(conn)
+func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage{
 	//create new message to return
 	var msg shared.ExecutableMessage
-	err := decoder.Decode(&msg)
+	err := decoder.Decode(msg)
 	if err != nil {
 		fmt.Println("Error decoding message from server:", err)
         close(term) // terminate client if decoding fails
