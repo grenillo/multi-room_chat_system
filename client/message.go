@@ -39,6 +39,7 @@ func (j *JoinCmd) ExecuteClient() {
 	for _, msg := range j.Reply.Log {
 		fmt.Println(formatMessage(&msg))
 	}
+	fmt.Print("> ")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +101,7 @@ func clearScreen() {
     fmt.Print("\033[2J\033[H")
 }
 
-func formatMessage(m *shared.Message) string{
+func formatMessage(m *shared.Message) string {
 	var resp string
 	//convert timestamp to string
 	time := m.Timestamp.Format("2006-01-02 15:04:05")

@@ -1,9 +1,9 @@
 package server
 
 import (
-	"fmt"
-	"strings"
+	"log"
 	"multi-room_chat_system/shared"
+	"strings"
 )
 
 func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
@@ -19,8 +19,8 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 	parts := strings.Fields(input.Content)
 	switch parts[0] {
 	case "/join":
-		//get current room for the user
-		room := s.users[input.UserName].CurrentRoom
+		//get room user wants to join
+		room := parts[1]
 		//add metadata to the join type
 		join := &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input, Room: room}}
 		return join
@@ -51,7 +51,9 @@ func (m *Message) ExecuteServer() {
 		m.Response = resp
 		return
 	}
-	//user in room, broadcast to all other users
+	//user in room, log message
+	s.rooms[s.users[m.UserName].CurrentRoom].log = append(s.rooms[s.users[m.UserName].CurrentRoom].log, *m.Message)
+	//broadcast to all other users
 	resp = shared.ResponseMD{Status: true}
 	m.Response = resp
 	s.rooms[s.users[m.UserName].CurrentRoom].broadcast(m)
@@ -69,6 +71,8 @@ type JoinCmd struct {
 func (j *JoinCmd) ExecuteServer() {
 	s := GetServerState()
 	//first check that the room exists
+	log.Println(s.rooms)
+	log.Println("client attempting to join room:", j.Room)
 	result := contains(mapToSlice(s.rooms), j.Room)
 	if !result {
 		j.Reply.Status = false
@@ -197,8 +201,4 @@ func mapToSlice[V any](m map[string]V) []string {
         keys = append(keys, k)
     }
     return keys
-}
-
-func clearScreen() {
-    fmt.Print("\033[2J\033[H")
 }

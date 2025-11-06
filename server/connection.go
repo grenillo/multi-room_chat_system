@@ -20,6 +20,7 @@ func handleNewConnection(conn net.Conn) {
 	writer.Flush()
 	//read the entered username
 	username, err := reader.ReadString('\n')
+	username = strings.TrimSpace(username)
 	if err != nil {
         fmt.Println("Failed to read username:", err)
         return

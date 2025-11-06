@@ -145,6 +145,7 @@ func (s *ServerState) createRoom(roomName string) {
 	}
 	//add new room to the server's state
 	s.rooms[roomName] = &newRoom
+	log.Println("SERVER: CREATED ROOM", roomName)
 }
 
 //helper function to remove a room
