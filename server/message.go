@@ -4,6 +4,7 @@ import (
 	"log"
 	"multi-room_chat_system/shared"
 	"strings"
+	"time"
 )
 
 func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
@@ -110,21 +111,9 @@ func (j *JoinCmd) ExecuteServer() {
 	j.Reply.Status = true
 	//update user's room
 	s.users[j.UserName].CurrentRoom = j.Room
-	//add user joining to the room's log
-	m := shared.Message{
-		MsgMetadata: shared.MsgMetadata{
-			Timestamp: j.Timestamp,
-			UserName:  j.UserName,
-			Flag:      true,
-			Content:   " joined " + j.Room,
-		},
-		Response: shared.ResponseMD{Status: true},
-	}
-	M := &Message{Message: &m}
-	log.Println(*M.Message)
-	s.rooms[j.Room].log = append(s.rooms[j.Room].log, m)
-	//broadcast user joining to other users
-	s.rooms[j.Room].broadcast(M)
+
+	//broadcast and log user joining to all others currently in the room
+	broadcast(j.UserName, "joined", j.Timestamp, j.Room)
 
 	//store the room's current state of messages in the response
 	j.Reply.Log = s.rooms[j.Room].log
@@ -150,6 +139,11 @@ func (l *LeaveCmd) ExecuteServer() {
 	//remove user from their requested room
 	s.rooms[s.users[l.UserName].CurrentRoom].removeUser(s.users[l.UserName])
 	l.Room = s.users[l.UserName].CurrentRoom
+
+	//broadcast and log user leaving to all others currently in the room
+	broadcast(l.UserName, "left", l.Timestamp, l.Room)
+
+
 	//update user state
 	s.users[l.UserName].CurrentRoom = ""
 	l.Reply.Status = true
@@ -216,4 +210,24 @@ func mapToSlice[V any](m map[string]V) []string {
         keys = append(keys, k)
     }
     return keys
+}
+
+
+func broadcast(username string, action string, timestamp time.Time, room string) {
+	s := GetServerState()
+	//add user action to the room's log
+	m := shared.Message{
+		MsgMetadata: shared.MsgMetadata{
+			Timestamp: timestamp,
+			UserName:  username,
+			Flag:      true,
+			Content:   " " + action + " " + room,
+		},
+		Response: shared.ResponseMD{Status: true},
+	}
+	M := &Message{Message: &m}
+	s.rooms[room].log = append(s.rooms[room].log, m)
+
+	//broadcast user action to all other users in the room
+	s.rooms[room].broadcast(M)
 }
