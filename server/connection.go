@@ -16,7 +16,7 @@ func handleNewConnection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
     writer := bufio.NewWriter(conn)
 	//prompt user for username
-	writer.WriteString("Enter your username: ")
+	writer.WriteString("Enter your username: >")
 	writer.Flush()
 	//read the entered username
 	username, err := reader.ReadString('\n')

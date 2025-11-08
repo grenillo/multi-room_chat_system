@@ -21,6 +21,7 @@ type MsgMetadata struct {
 	UserName string
 	Timestamp time.Time
 	Content string
+	Flag bool
 }
 
 type ResponseMD struct {

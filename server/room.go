@@ -1,6 +1,7 @@
 package server
 
-import(
+import (
+	"log"
 	"multi-room_chat_system/shared"
 )
 
@@ -19,6 +20,7 @@ func (rm *Room) broadcast(msg *Message) {
         if msg.UserName == username {
 			continue
 		}
+		log.Println(*msg.Message)
 		//send message to all connected users
 		member.RecvServer <- msg
     }

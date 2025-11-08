@@ -90,17 +90,19 @@ func(s *ServerState) run() {
 				newUser := UserFactory(username, RoleMember)
 				//add new user to the server state
 				s.users[username] = newUser
+				rooms := getJoinableRooms(s.users[username])
 				resp = ServerJoinResponse{
 					Status: true,
-					Message: "Welcome to the server!\n",
+					Message: "Welcome to the server!\n" + rooms,
 					Role: newUser,
 				}
 			//if user already exists
 			} else {
 				if s.users[username].Role != RoleBanned {
+					rooms := getJoinableRooms(s.users[username])
 					resp = ServerJoinResponse{
 						Status: true,
-						Message: "Welcome back to the server!\n",
+						Message: "Welcome back to the server!\n" + rooms,
 						Role: s.users[username],
 					}
 				} else {
@@ -183,3 +185,11 @@ func (s *ServerState) RecvMessage(input *shared.MsgMetadata, reply *shared.Execu
 	return nil
 }
 
+func getJoinableRooms(user *Member) string {
+	temp := "Available rooms:"
+	for _, room := range user.AvailableRooms {
+		temp += " " + room
+	}
+	temp += ">"
+	return temp 
+}

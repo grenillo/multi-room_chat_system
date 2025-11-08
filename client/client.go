@@ -27,8 +27,9 @@ func StartClient() {
 
 	//read initial username prompt from server
 	serverReader := bufio.NewReader(conn)
-	prompt, _ := serverReader.ReadString(':')
-	fmt.Print(prompt, " ")
+	prompt, _ := serverReader.ReadString('>')
+	prompt = strings.TrimSuffix(prompt, ">")
+	fmt.Print(prompt)
 	var username string
 	fmt.Scanln(&username)
 	//send to server
@@ -39,23 +40,25 @@ func StartClient() {
 		return
 	}
 	//read response
-	resp, _ := serverReader.ReadString('\n')
-	fmt.Print(resp)
+	resp, _ := serverReader.ReadString('>')
+	resp = strings.TrimSuffix(resp, ">")
 	if strings.Contains(resp, "PERMISSION DENIED") {
+		fmt.Println(resp)
 		close(term)
 		return
 	}
-
+	ClearScreen()
+	fmt.Println(resp)
 	//create goroutines to continuously listen for input and server responses
 	go getInput(conn, term)
-	fmt.Println("input stream created")
+	//fmt.Println("input stream created")
 	go outputFromServer(conn, term) // ensures recvExecutableMsg is used
-	fmt.Println("output stream created")
+	//fmt.Println("output stream created")
 
 	//block main from immediately exiting
-	fmt.Println("blocked from exiting")
+	//fmt.Println("blocked from exiting")
 	<-term
-	fmt.Println("unblocked from exiting")
+	//fmt.Println("unblocked from exiting")
 
 }
 
@@ -64,7 +67,6 @@ func getInput(conn net.Conn,  term chan struct{}) {
 	//create reader for this client
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("> ") // indicate prompt 
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading input:", err)
@@ -77,7 +79,7 @@ func getInput(conn net.Conn,  term chan struct{}) {
 	}
 }
 
-func outputFromServer(conn net.Conn,  term chan struct{}) {
+func outputFromServer(conn net.Conn, term chan struct{}) {
 	decoder := gob.NewDecoder(conn)
 	for {
 		select {

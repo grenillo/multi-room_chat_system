@@ -105,12 +105,27 @@ func (j *JoinCmd) ExecuteServer() {
 	if _, exists := s.rooms[s.users[j.UserName].CurrentRoom]; exists {
 		s.rooms[s.users[j.UserName].CurrentRoom].removeUser(s.users[j.UserName])
 	}
-
 	//add user to room
 	s.rooms[j.Room].addUser(s.users[j.UserName])
 	j.Reply.Status = true
 	//update user's room
 	s.users[j.UserName].CurrentRoom = j.Room
+	//add user joining to the room's log
+	m := shared.Message{
+		MsgMetadata: shared.MsgMetadata{
+			Timestamp: j.Timestamp,
+			UserName:  j.UserName,
+			Flag:      true,
+			Content:   " joined " + j.Room,
+		},
+		Response: shared.ResponseMD{Status: true},
+	}
+	M := &Message{Message: &m}
+	log.Println(*M.Message)
+	s.rooms[j.Room].log = append(s.rooms[j.Room].log, m)
+	//broadcast user joining to other users
+	s.rooms[j.Room].broadcast(M)
+
 	//store the room's current state of messages in the response
 	j.Reply.Log = s.rooms[j.Room].log
 

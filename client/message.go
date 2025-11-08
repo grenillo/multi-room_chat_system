@@ -33,13 +33,12 @@ func (j *JoinCmd) ExecuteClient() {
 		fmt.Println(j.Reply.ErrMsg)
 		return
 	}
-	clearScreen()
+	ClearScreen()
 	fmt.Println("=======JOINED ROOM ", j.Room, "=======")
 	//print out entire message history to client
 	for _, msg := range j.Reply.Log {
 		fmt.Println(formatMessage(&msg))
 	}
-	fmt.Print("> ")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +54,7 @@ func (l *LeaveCmd) ExecuteClient() {
 		fmt.Println(l.Reply.ErrMsg)
 		return
 	}
-	clearScreen()
+	ClearScreen()
 	fmt.Println("=======LEFT ROOM ", l.Room,"=======")	
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,14 +96,18 @@ func (h *HelpCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-func clearScreen() {
-    fmt.Print("\033[2J\033[H")
+func ClearScreen() {
+    fmt.Print("\033[2J\033[H\n")
 }
 
 func formatMessage(m *shared.Message) string {
-	var resp string
 	//convert timestamp to string
 	time := m.Timestamp.Format("2006-01-02 15:04:05")
-	resp = time + "\t" + m.UserName + ":  " + m.Content
+	var resp string
+	if m.Flag {
+		resp = time + "\t" + m.UserName + m.Content
+	} else {
+		resp = time + "\t" + m.UserName + ":  " + m.Content
+	}
 	return resp
 }
