@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"multi-room_chat_system/shared"
 	"net"
 	"os"
@@ -102,7 +103,11 @@ func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.Executab
 	var msg interface{}
 	err := decoder.Decode(&msg)
 	if err != nil {
-		fmt.Println("Error decoding message from server:", err)
+		if err == io.EOF {
+            fmt.Println("Server closed the connection. Exiting...")
+        } else {
+            fmt.Println("Error decoding message from server:", err)
+        }
         close(term) // terminate client if decoding fails
         return nil
 	}
@@ -122,6 +127,8 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 		return &ListUsersCmd{ListUsersCmd: m}
 	case *shared.Message:
 		return &Message{Message: m}
+	case *shared.QuitCmd:
+		return &QuitCmd{QuitCmd: m}
     default:
         panic("error during wrapping: unknown shared type")
     }

@@ -89,6 +89,7 @@ func(s *ServerState) run() {
 				//if dne create a new user of type member
 				newUser := UserFactory(username, RoleMember)
 				//add new user to the server state
+				newUser.Active = true
 				s.users[username] = newUser
 				rooms := getJoinableRooms(s.users[username])
 				resp = ServerJoinResponse{
@@ -98,18 +99,32 @@ func(s *ServerState) run() {
 				}
 			//if user already exists
 			} else {
-				if s.users[username].Role != RoleBanned {
-					rooms := getJoinableRooms(s.users[username])
-					resp = ServerJoinResponse{
-						Status: true,
-						Message: "Welcome back to the server!\n" + rooms,
-						Role: s.users[username],
-					}
-				} else {
+				//first check to see if the user is currently logged in
+				if s.users[username].Active {
 					resp = ServerJoinResponse{
 						Status: false,
-						Message: "PERMISSION DENIED: You are banned!\n",
+						Message: "PERMISSION DENIED: " + username + " is currently logged in!\n",
 						Role: s.users[username],
+					}
+				} else { //user not logged in
+					if s.users[username].Role != RoleBanned {
+						//create new object
+						user := UserFactory(username, RoleMember)
+						//add user to the server state for updated channels
+						user.Active = true
+						s.users[username] = user
+						rooms := getJoinableRooms(s.users[username])
+						resp = ServerJoinResponse{
+							Status: true,
+							Message: "Welcome back to the server!\n" + rooms,
+							Role: s.users[username],
+						}
+					} else {
+						resp = ServerJoinResponse{
+							Status: false,
+							Message: "PERMISSION DENIED: You are banned!\n",
+							Role: s.users[username],
+						}
 					}
 				}
 			}

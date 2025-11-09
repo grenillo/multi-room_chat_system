@@ -17,6 +17,7 @@ type AdminResponse struct {
 type User struct {
 	Username string
 	Role Role
+	Active bool
 }
 
 type Member struct {
@@ -58,7 +59,7 @@ func defMember(username string, role Role) *Member {
 			ToServer: make(chan shared.MsgMetadata),
 			RecvServer: make(chan shared.ExecutableMessage),
 			Term: make(chan struct{}),
-			Permissions: []string{"/join", "/leave", "/listusers", "/help"},		
+			Permissions: []string{"/join", "/leave", "/listusers", "/help", "/quit"},		
 		}
 	}
 }
@@ -114,5 +115,6 @@ func getUsage(role Role) []string {
 		usage = append(usage, "/promote {user}")
 		usage = append(usage, "/demote {user}")
 	}
+	usage = append(usage, "/quit")
 	return usage
 }

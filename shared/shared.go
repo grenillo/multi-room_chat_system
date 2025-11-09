@@ -16,6 +16,7 @@ func Init() {
 	gob.Register(&ListUsersCmd{})
 	gob.Register(&HelpCmd{})
 	gob.Register(&LUResp{})
+	gob.Register(&QuitCmd{})
 }
 
 type MsgMetadata struct {
@@ -71,4 +72,8 @@ type HelpCmd struct {
 type HelpResp struct {
 	ResponseMD
 	Usage []string
+}
+
+type QuitCmd struct {
+	MsgMetadata
 }

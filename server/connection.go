@@ -80,6 +80,8 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 			
 		//if user/server is terminated
 		case <-user.Term:
+			close(user.RecvServer)
+			close(user.ToServer)
 			conn.Close()
 			return
 		}
@@ -99,7 +101,7 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 			//detect if client disconnects
 			if err != nil {
 				fmt.Println("Client disconnected")
-				close(user.Term)
+				safeClose(user.Term)
 				return
 			}
 			//format input
@@ -125,16 +127,28 @@ func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
 func unwrapShared(msg interface{}) interface{} {
     switch m := msg.(type) {
     case *HelpCmd:
-        return m.HelpCmd       // *shared.HelpCmd
+        return m.HelpCmd		// *shared.HelpCmd
     case *JoinCmd:
-        return m.JoinCmd       // *shared.JoinCmd
+        return m.JoinCmd		// *shared.JoinCmd
     case *LeaveCmd:
-        return m.LeaveCmd      // *shared.LeaveCmd
+        return m.LeaveCmd		// *shared.LeaveCmd
     case *ListUsersCmd:
-        return m.ListUsersCmd  // *shared.ListUsersCmd
+        return m.ListUsersCmd	// *shared.ListUsersCmd
     case *Message:
-        return m.Message       // *shared.Message
+        return m.Message		// *shared.Message
+	case *QuitCmd:
+		return m.QuitCmd		// *shared.QuitCMD
     default:
         panic("error during unwrapping: unknown command type")
+    }
+}
+
+
+func safeClose(ch chan struct{}) {
+    select {
+    case <-ch:
+        // already closed, do nothing
+    default:
+        close(ch)
     }
 }

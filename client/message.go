@@ -96,6 +96,18 @@ func (h *HelpCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+type QuitCmd struct {
+	*shared.QuitCmd
+}
+//user will always be able to quit
+func (q *QuitCmd) ExecuteServer() {}
+func (q *QuitCmd) ExecuteClient() {
+	ClearScreen()
+	fmt.Println("====================== GOODBYE ======================")
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 func ClearScreen() {
     fmt.Print("\033[2J\033[H\n")
 }

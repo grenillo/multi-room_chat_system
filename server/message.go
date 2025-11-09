@@ -31,6 +31,8 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &ListUsersCmd{ListUsersCmd: &shared.ListUsersCmd{MsgMetadata: input, Reply: shared.LUResp{}}}
 	case "/help":
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: false}}
+	case "/quit":
+		return &QuitCmd{QuitCmd: &shared.QuitCmd{MsgMetadata: input}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -136,15 +138,13 @@ func (l *LeaveCmd) ExecuteServer() {
 		return
 	}
 	//remove user from their requested room
-	s.rooms[s.users[l.UserName].CurrentRoom].removeUser(s.users[l.UserName])
 	l.Room = s.users[l.UserName].CurrentRoom
-
+	remove(l.UserName, l.Room)
 	//broadcast and log user leaving to all others currently in the room
 	broadcast(l.UserName, "left", l.Timestamp, l.Room)
 
 
 	//update user state
-	s.users[l.UserName].CurrentRoom = ""
 	l.Reply.Status = true
 }
 
@@ -195,6 +195,28 @@ func (h *HelpCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+type QuitCmd struct {
+	*shared.QuitCmd
+}
+//user will always be able to quit
+func (q *QuitCmd) ExecuteServer() {
+	s := GetServerState()
+	//check if user is in a room
+	if s.users[q.UserName].CurrentRoom != "" {
+		room := s.users[q.UserName].CurrentRoom
+		remove(q.UserName, room)
+		broadcast(q.UserName, "left", q.Timestamp, room)
+	}
+	//set user status to false
+	s.users[q.UserName].Active = false
+	//close this connectionHandler once response is sent
+	safeClose(s.users[q.UserName].Term)
+}
+func (q *QuitCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {
 	for _, v := range container {
@@ -231,4 +253,11 @@ func broadcast(username string, action string, timestamp time.Time, room string)
 
 	//broadcast user action to all other users in the room
 	s.rooms[room].broadcast(M)
+}
+
+func remove(username string, room string) {
+	s := GetServerState()
+	//remove user from their requested room
+	s.rooms[room].removeUser(s.users[username])
+	s.users[username].CurrentRoom = ""
 }
