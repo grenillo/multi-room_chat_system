@@ -28,7 +28,7 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 	case "/leave":
 		return &LeaveCmd{LeaveCmd: &shared.LeaveCmd{MsgMetadata: input}}
 	case "/listusers":
-		return &ListUsersCmd{ListUsersCmd: &shared.ListUsersCmd{MsgMetadata: input}}
+		return &ListUsersCmd{ListUsersCmd: &shared.ListUsersCmd{MsgMetadata: input, Reply: shared.LUResp{}}}
 	case "/help":
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: false}}
 	default:
@@ -45,9 +45,8 @@ type Message struct {
 func (m *Message) ExecuteServer() {
 	s := GetServerState()
 	var resp shared.ResponseMD
-	//check that user is in this room
-	result := contains(mapToSlice(s.users), m.UserName)
-	if !result {
+	//check that user is in a room
+	if s.users[m.UserName].CurrentRoom == "" {
 		resp = shared.ResponseMD{Status: false, ErrMsg: "PERMISSION DENIED: User is not currently in a room"}
 		m.Response = resp
 		return
@@ -167,7 +166,9 @@ func (lu *ListUsersCmd) ExecuteServer() {
 		return
 	}
 	//get the list of users from a room
-	lu.Reply.Users = mapToSlice(s.rooms[lu.UserName].users)
+	log.Println("users in room:", s.rooms[s.users[lu.UserName].CurrentRoom])
+	lu.Reply.Users = mapToSlice(s.rooms[s.users[lu.UserName].CurrentRoom].users)
+	log.Println("log of users:", lu.Reply.Users)
 	lu.Reply.Status = true
 	lu.Reply.Room = s.users[lu.UserName].CurrentRoom
 }

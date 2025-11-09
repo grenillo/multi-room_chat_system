@@ -15,6 +15,7 @@ func Init() {
 	gob.Register(&LeaveCmd{})
 	gob.Register(&ListUsersCmd{})
 	gob.Register(&HelpCmd{})
+	gob.Register(&LUResp{})
 }
 
 type MsgMetadata struct {
