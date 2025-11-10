@@ -17,6 +17,7 @@ func Init() {
 	gob.Register(&HelpCmd{})
 	gob.Register(&LUResp{})
 	gob.Register(&QuitCmd{})
+	gob.Register(&KickBanCmd{})
 }
 
 type MsgMetadata struct {
@@ -76,4 +77,11 @@ type HelpResp struct {
 
 type QuitCmd struct {
 	MsgMetadata
+}
+
+type KickBanCmd struct {
+	MsgMetadata
+	ResponseMD //for displaying error message if not having permission
+	Ban bool
+	User string
 }

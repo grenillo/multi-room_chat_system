@@ -71,6 +71,10 @@ func initServer() {
 	//create initial rooms
 	instance.createRoom("#general")
 	instance.createRoom("#staff")
+
+	//add admin
+	instance.users["grenillo"] = UserFactory("grenillo", RoleAdmin)
+
 	//start goroutine to run server
 	go instance.run()	
 	
@@ -109,7 +113,7 @@ func(s *ServerState) run() {
 				} else { //user not logged in
 					if s.users[username].Role != RoleBanned {
 						//create new object
-						user := UserFactory(username, RoleMember)
+						user := UserFactory(username, s.users[username].Role)
 						//add user to the server state for updated channels
 						user.Active = true
 						s.users[username] = user

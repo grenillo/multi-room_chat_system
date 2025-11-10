@@ -20,10 +20,8 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 	parts := strings.Fields(input.Content)
 	switch parts[0] {
 	case "/join":
-		//get room user wants to join
-		room := parts[1]
 		//add metadata to the join type
-		join := &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input, Room: room}}
+		join := &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input, Room: parts[1]}}
 		return join
 	case "/leave":
 		return &LeaveCmd{LeaveCmd: &shared.LeaveCmd{MsgMetadata: input}}
@@ -33,6 +31,10 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: false}}
 	case "/quit":
 		return &QuitCmd{QuitCmd: &shared.QuitCmd{MsgMetadata: input}}
+	case "/kick":
+		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: false, User: parts[1]}}
+	case "/ban":
+		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: true, User: parts[1]}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -216,6 +218,63 @@ func (q *QuitCmd) ExecuteServer() {
 func (q *QuitCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+type KickBanCmd struct {
+	*shared.KickBanCmd
+}
+func (kb *KickBanCmd) ExecuteServer() {
+	s := GetServerState()
+	//first check user's role to see if they can execute
+	if (s.users[kb.UserName].Role < RoleAdmin) {
+		kb.Status = false
+		kb.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	} else { //is an admin or owner
+		//check to see if the specified user exists
+		if _, exists := s.users[kb.User]; !exists {
+			kb.Status = false
+			kb.ErrMsg = "PERMISSION DENIED: User: " + kb.User + " does not exist on this server"
+			return
+		} else { //user exists
+			//check if kick and user online
+			if !s.users[kb.User].Active && !kb.Ban {
+				kb.Status = false
+				kb.ErrMsg = "PERMISSION DENIED: User:" + kb.User + " is not logged in"
+				return
+			}
+			//otherwise, check if that user is in a room
+			kb.Status = true
+			//check if user is in a room
+			if s.users[kb.User].CurrentRoom != "" {
+				room := s.users[kb.User].CurrentRoom
+				remove(kb.User, room)
+				broadcast(kb.User, "left", kb.Timestamp, room)
+			}
+			var msg *Message
+			var update *Message
+			//if ban
+			if kb.Ban {
+				s.users[kb.User].Role = RoleBanned
+				//broadcast ban to staff
+				msg = formatStaffMsg(kb.UserName, "banned user: " + kb.User, kb.Timestamp)
+				update = formatStaffMsg("You", "have been banned!", kb.Timestamp)
+			} else {
+				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
+				update = formatStaffMsg("You", "have been kicked!", kb.Timestamp)
+			}
+
+			broadcastToStaff(msg)
+			//update user, update its active state, then close its term channel
+			s.users[kb.User].RecvServer <- update
+			s.users[kb.User].Active = false
+			safeClose(s.users[kb.User].Term)
+		}
+	}
+}
+func (kb *KickBanCmd) ExecuteClient() {}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {
@@ -260,4 +319,29 @@ func remove(username string, room string) {
 	//remove user from their requested room
 	s.rooms[room].removeUser(s.users[username])
 	s.users[username].CurrentRoom = ""
+}
+
+func formatStaffMsg(username string, action string, timestamp time.Time) *Message{
+	m := shared.Message{
+		MsgMetadata: shared.MsgMetadata{
+			Timestamp: timestamp,
+			UserName:  username,
+			Flag:      true,
+			Content:   " " + action,
+		},
+		Response: shared.ResponseMD{Status: true},
+	}
+	return &Message{Message: &m}
+}
+
+func broadcastToStaff(msg *Message) {
+	s := GetServerState()
+	for name, user := range s.users {
+		if name == msg.UserName {
+			continue
+		} 
+		if user.Role >= RoleAdmin {
+			user.RecvServer <- msg
+		}
+	}
 }

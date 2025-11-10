@@ -108,6 +108,28 @@ func (q *QuitCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+type KickBanCmd struct {
+	*shared.KickBanCmd
+}
+//user will always be able to quit
+func (kb *KickBanCmd) ExecuteServer() {}
+func (kb *KickBanCmd) ExecuteClient() {
+	if !kb.Status {
+		fmt.Println(kb.ErrMsg)
+		return
+	}
+	if kb.Ban {
+		fmt.Println("SERVER:", kb.User ,"was banned successfully")
+		return
+	}
+	fmt.Println("SERVER:", kb.User,"was kicked successfully")
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 func ClearScreen() {
     fmt.Print("\033[2J\033[H\n")
 }
