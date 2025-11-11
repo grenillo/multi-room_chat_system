@@ -85,3 +85,13 @@ type KickBanCmd struct {
 	Ban bool
 	User string
 }
+
+type CreateCmd struct {
+	MsgMetadata
+	ResponseMD //for displaying error message if not having permission
+}
+
+type DeleteCmd struct {
+	MsgMetadata
+	ResponseMD //for displaying error message if not having permission
+}

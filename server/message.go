@@ -106,7 +106,9 @@ func (j *JoinCmd) ExecuteServer() {
 	}
 	
 	//check if user is in a different room, if they are, remove them from that room's state before proceeding
-	if _, exists := s.rooms[s.users[j.UserName].CurrentRoom]; exists {
+	if s.users[j.UserName].CurrentRoom != "" && j.Room != s.users[j.UserName].CurrentRoom {
+		//broadcast user leaving to other members in that room
+		broadcast(j.UserName, "left", j.Timestamp, s.users[j.UserName].CurrentRoom)
 		s.rooms[s.users[j.UserName].CurrentRoom].removeUser(s.users[j.UserName])
 	}
 	//add user to room

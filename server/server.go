@@ -74,7 +74,7 @@ func initServer() {
 
 	//add admin
 	instance.users["grenillo"] = UserFactory("grenillo", RoleAdmin)
-
+	instance.users["grenillo2"] = UserFactory("grenillo2", RoleAdmin)
 	//start goroutine to run server
 	go instance.run()	
 	
