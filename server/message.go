@@ -47,13 +47,16 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &PromoteDemoteCmd{PromoteDemoteCmd: &shared.PromoteDemoteCmd{MsgMetadata: input, Promote: true}}
 	case "/demote":
 		return &PromoteDemoteCmd{PromoteDemoteCmd: &shared.PromoteDemoteCmd{MsgMetadata: input, Promote: false}}
+	case "/broadcast":
+		parts = strings.SplitN(input.Content, " ", 2)
+		input.Args = len(parts)
+		return &BroadcastCmd{BroadcastCmd: &shared.BroadcastCmd{MsgMetadata: input}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
 }
 
 /////////////////////////////// MESSAGE and its execute functions ///////////////////////////////
-
 type Message struct {
 	*shared.Message
 }
@@ -507,6 +510,41 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 func (p *PromoteDemoteCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////// BROADCAST CMD and its execute functions ////////////////////////////
+type BroadcastCmd struct {
+	*shared.BroadcastCmd
+}
+func (b* BroadcastCmd) ExecuteServer() {
+	s := GetServerState()
+	//verify correct usage
+	if b.Args != 2 {
+		b.Status = false
+		b.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	parts := strings.SplitN(b.Content, " ", 2)
+	//take "/broadcast out of content string"
+	b.Content = parts[1]
+	//verify user can execute this command
+	if s.users[b.UserName].Role < RoleAdmin {
+		b.Status = false
+		b.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	}
+	b.Status = true
+	//user is at least admin and can broadcast -> send to all ACTIVE users
+	for username, user := range s.users {
+		//if the user is not active or we are looking at the sender, skip
+		if username == b.UserName || !user.Active {
+			continue
+		}
+		//otherwise, send to the user
+		user.RecvServer <- b
+	}
+}
+func (b* BroadcastCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {

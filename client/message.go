@@ -17,7 +17,7 @@ func (m *Message) ExecuteClient() {
 		return
 	}
 	//otherwise, print to our client's local terminal
-	fmt.Println(formatMessage(m.Message))
+	fmt.Println(formatMessage(false, m.Message, nil))
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,7 +35,7 @@ func (j *JoinCmd) ExecuteClient() {
 	fmt.Println("=======JOINED ROOM ", j.Room, "=======")
 	//print out entire message history to client
 	for _, msg := range j.Reply.Log {
-		fmt.Println(formatMessage(&msg))
+		fmt.Println(formatMessage(false, &msg, nil))
 	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -158,20 +158,47 @@ func (p *PromoteDemoteCmd) ExecuteServer() {}
 func (p *PromoteDemoteCmd) ExecuteClient() {
 	fmt.Println(p.ErrMsg)
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////// BROADCAST CMD and its execute functions ////////////////////////////
+type BroadcastCmd struct {
+	*shared.BroadcastCmd
+}
+func (b* BroadcastCmd) ExecuteServer() {}
+func (b* BroadcastCmd) ExecuteClient() {
+	//check if message was sent
+	if !b.Status {
+		fmt.Println(b.ErrMsg)
+		return
+	}
+	//otherwise, print to our client's local terminal
+	fmt.Println(formatMessage(true, nil, b.BroadcastCmd))
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 func ClearScreen() {
     fmt.Print("\033[2J\033[H\n")
 }
 
-func formatMessage(m *shared.Message) string {
-	//convert timestamp to string
-	time := m.Timestamp.Format("2006-01-02 15:04:05")
+func formatMessage(broadcast bool, m *shared.Message, b *shared.BroadcastCmd) string {
 	var resp string
-	if m.Flag {
-		resp = time + "\t" + m.UserName + m.Content
+	if broadcast {
+		//convert timestamp to string
+		time := b.Timestamp.Format("2006-01-02 15:04:05")
+		if b.Flag {
+			resp = time + "\t" + b.UserName + b.Content
+		} else {
+			resp = time + "\t" + b.UserName + ":  " + b.Content
+		}
 	} else {
-		resp = time + "\t" + m.UserName + ":  " + m.Content
+		//convert timestamp to string
+		time := m.Timestamp.Format("2006-01-02 15:04:05")
+		if m.Flag {
+			resp = time + "\t" + m.UserName + m.Content
+		} else {
+			resp = time + "\t" + m.UserName + ":  " + m.Content
+		}
 	}
 	return resp
 }

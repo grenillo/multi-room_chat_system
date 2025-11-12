@@ -130,25 +130,27 @@ func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
 func unwrapShared(msg interface{}) interface{} {
     switch m := msg.(type) {
     case *HelpCmd:
-        return m.HelpCmd		// *shared.HelpCmd
+        return m.HelpCmd	
     case *JoinCmd:
-        return m.JoinCmd		// *shared.JoinCmd
+        return m.JoinCmd		
     case *LeaveCmd:
-        return m.LeaveCmd		// *shared.LeaveCmd
+        return m.LeaveCmd		
     case *ListUsersCmd:
-        return m.ListUsersCmd	// *shared.ListUsersCmd
+        return m.ListUsersCmd	
     case *Message:
-        return m.Message		// *shared.Message
+        return m.Message	
 	case *QuitCmd:
-		return m.QuitCmd		// *shared.QuitCMD
+		return m.QuitCmd		
 	case *KickBanCmd:
-		return m.KickBanCmd		// *shared.KickBanCmd
+		return m.KickBanCmd		
 	case *CreateCmd:
-		return m.CreateCmd		// *shared.CreateCmd
+		return m.CreateCmd	
 	case *DeleteCmd:
-		return m.DeleteCmd		// *shared.DeleteCmd
+		return m.DeleteCmd	
 	case *PromoteDemoteCmd:
-		return m.PromoteDemoteCmd		// *shared.PromoteCmd
+		return m.PromoteDemoteCmd		
+	case *BroadcastCmd:
+		return m.BroadcastCmd	
     default:
         panic("error during unwrapping: unknown command type")
     }

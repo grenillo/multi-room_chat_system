@@ -111,6 +111,7 @@ func getUsage(role Role) []string {
 		usage = append(usage, "/ban {user}")
 		usage = append(usage, "/create {roomName} {rolePermission: all or staff}")
 		usage = append(usage, "/delete {roomName}")
+		usage = append(usage, "/broadcast {msg}")
 	}
 	if role >= RoleOwner {
 		usage = append(usage, "/promote {user}")
