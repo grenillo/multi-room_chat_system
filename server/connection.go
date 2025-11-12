@@ -144,7 +144,9 @@ func unwrapShared(msg interface{}) interface{} {
 	case *KickBanCmd:
 		return m.KickBanCmd		// *shared.KickBanCmd
 	case *CreateCmd:
-		return m.CreateCmd
+		return m.CreateCmd		// *shared.CreateCmd
+	case *DeleteCmd:
+		return m.DeleteCmd		// *shared.DeleteCmd
     default:
         panic("error during unwrapping: unknown command type")
     }

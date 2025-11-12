@@ -19,6 +19,7 @@ func Init() {
 	gob.Register(&QuitCmd{})
 	gob.Register(&KickBanCmd{})
 	gob.Register(&CreateCmd{})
+	gob.Register(&DeleteCmd{})
 }
 
 type MsgMetadata struct {
@@ -98,4 +99,6 @@ type CreateCmd struct {
 type DeleteCmd struct {
 	MsgMetadata
 	ResponseMD //for displaying error message if not having permission
+	Room string
+	InRoom bool
 }

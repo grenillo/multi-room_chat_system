@@ -41,6 +41,8 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: true, }}
 	case "/create":
 		return &CreateCmd{CreateCmd: &shared.CreateCmd{MsgMetadata: input}}
+	case "/delete":
+		return &DeleteCmd{DeleteCmd: &shared.DeleteCmd{MsgMetadata: input}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -251,7 +253,6 @@ type KickBanCmd struct {
 }
 func (kb *KickBanCmd) ExecuteServer() {
 	s := GetServerState()
-	log.Println("1")
 	//check that the cmd was entered properly
 	if kb.Args != 2 {
 		kb.Status = false
@@ -261,7 +262,6 @@ func (kb *KickBanCmd) ExecuteServer() {
 	//set user after verifying it exists
 	parts := strings.Fields(kb.Content)
 	kb.User = parts[1]
-	log.Println("2")
 	//first check user's role to see if they can execute
 	if (s.users[kb.UserName].Role < RoleAdmin) {
 		kb.Status = false
@@ -274,7 +274,6 @@ func (kb *KickBanCmd) ExecuteServer() {
 			kb.ErrMsg = "PERMISSION DENIED: User: " + kb.User + " does not exist on this server"
 			return
 		} else { //user exists
-			log.Println("3")
 			//check if kick and user online
 			if !s.users[kb.User].Active && !kb.Ban {
 				kb.Status = false
@@ -289,7 +288,6 @@ func (kb *KickBanCmd) ExecuteServer() {
 				remove(kb.User, room)
 				broadcast(kb.User, "left", kb.Timestamp, room)
 			}
-			log.Println("4")
 			var msg *Message
 			var update *Message
 			//if ban
@@ -302,13 +300,11 @@ func (kb *KickBanCmd) ExecuteServer() {
 				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
 				update = formatStaffMsg("You", "have been kicked!", kb.Timestamp)
 			}
-			log.Println("5")
 			broadcastToStaff(msg)
 			//update user, update its active state, then close its term channel
 			s.users[kb.User].RecvServer <- update
 			s.users[kb.User].Active = false
 			safeClose(s.users[kb.User].Term)
-			log.Println("6")
 		}
 	}
 }
@@ -384,10 +380,57 @@ func (c *CreateCmd) ExecuteClient() {}
 type DeleteCmd struct {
 	*shared.DeleteCmd
 }
-func (c *DeleteCmd) ExecuteServer() {
-	
+func (d *DeleteCmd) ExecuteServer() {
+	s := GetServerState()
+	//check that the cmd was entered properly
+	if d.Args != 2 {
+		d.Status = false
+		d.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//set room and role after verifying they exist
+	parts := strings.Fields(d.Content)
+	d.Room = parts[1]
+	//first check user's role to see if they can execute
+	if (s.users[d.UserName].Role < RoleAdmin) {
+		d.Status = false
+		d.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	}
+	//check to see if the specified room exists
+	if _, exists := s.rooms[d.Room]; !exists {
+		d.Status = false
+		d.ErrMsg = "PERMISSION DENIED: Room " + d.Room + " does not exist" 
+		return
+	}
+	//once here room exists and user has the correct permission
+	if d.Room == s.users[d.UserName].CurrentRoom {
+		d.InRoom = true
+	}
+	//generate special leave cmd to send to users
+	force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: d.Timestamp, UserName: d.UserName, Flag: true }, Room: d.Room, Reply: shared.ResponseMD{Status: true}}}
+	//send to all users in the room
+	for name, user := range s.rooms[d.Room].users {
+		//remove user from room state
+		remove(name, d.Room)
+		if name == d.UserName { //skip if self
+			continue
+		}
+		//notify they are no longer in that room
+		user.RecvServer <- force
+	}
+
+	//remove room from server state
+	delete(s.rooms, d.Room)
+
+	//notify all staff
+	msg := formatStaffMsg(d.UserName, "Deleted " + d.Room, d.Timestamp)
+	broadcastToStaff(msg)
+
+	d.ErrMsg = "SERVER: Sucessfully deleted " + d.Room
+	d.Status = true
 }
-func (c *DeleteCmd) ExecuteClient() {}
+func (d *DeleteCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 //HELPER FUNCTIONS
@@ -452,7 +495,6 @@ func broadcastToStaff(msg *Message) {
 	s := GetServerState()
 	for name, user := range s.users {
 		if name == msg.UserName {
-			log.Println("7")
 			continue
 		}
 		log.Println(user.Role)
@@ -460,7 +502,6 @@ func broadcastToStaff(msg *Message) {
 			user.RecvServer <- msg
 		}
 	}
-	log.Println("8")
 }
 
 func convToRole(input string) Role {

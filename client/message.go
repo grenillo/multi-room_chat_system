@@ -140,9 +140,13 @@ func (c *CreateCmd) ExecuteClient() {
 type DeleteCmd struct {
 	*shared.DeleteCmd
 }
-func (c *DeleteCmd) ExecuteServer() {}
-func (c *DeleteCmd) ExecuteClient() {
-	
+func (d *DeleteCmd) ExecuteServer() {}
+func (d *DeleteCmd) ExecuteClient() {
+	if d.InRoom {
+		ClearScreen()
+		fmt.Println("======= LEFT ROOM ", d.Room,"=======")	
+	}
+	fmt.Println(d.ErrMsg)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
