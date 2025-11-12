@@ -24,6 +24,6 @@ func StartServer() {
 			continue
 		}
 		fmt.Println("Accepted connection", conn)
-		handleNewConnection(conn)
+		go handleNewConnection(conn)
 	}
 }	

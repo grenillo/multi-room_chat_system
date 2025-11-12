@@ -9,7 +9,6 @@ import (
 type Message struct {
 	*shared.Message
 }
-
 func (m *Message) ExecuteServer() {}
 func (m *Message) ExecuteClient() {
 	//check if message was sent
@@ -26,7 +25,6 @@ func (m *Message) ExecuteClient() {
 type JoinCmd struct {
 	*shared.JoinCmd
 }
-
 func (j *JoinCmd) ExecuteServer() {}
 func (j *JoinCmd) ExecuteClient() {
 	if !j.Reply.Status {
@@ -40,7 +38,6 @@ func (j *JoinCmd) ExecuteClient() {
 		fmt.Println(formatMessage(&msg))
 	}
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////// LEAVE CMD and its execute functions //////////////////////////////
@@ -108,7 +105,7 @@ func (q *QuitCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+//////////////////////////// KICK/BAN CMD and its execute functions /////////////////////////////
 type KickBanCmd struct {
 	*shared.KickBanCmd
 }
@@ -126,6 +123,27 @@ func (kb *KickBanCmd) ExecuteClient() {
 	fmt.Println("SERVER:", kb.User,"was kicked successfully")
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////// CREATE CMD and its execute functions //////////////////////////////
+type CreateCmd struct {
+	*shared.CreateCmd
+}
+func (c *CreateCmd) ExecuteServer() {}
+func (c *CreateCmd) ExecuteClient() {
+	fmt.Println(c.ErrMsg)
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////// DELETE CMD and its execute functions //////////////////////////////
+type DeleteCmd struct {
+	*shared.DeleteCmd
+}
+func (c *DeleteCmd) ExecuteServer() {}
+func (c *DeleteCmd) ExecuteClient() {
+	
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 

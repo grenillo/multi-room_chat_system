@@ -18,6 +18,7 @@ func Init() {
 	gob.Register(&LUResp{})
 	gob.Register(&QuitCmd{})
 	gob.Register(&KickBanCmd{})
+	gob.Register(&CreateCmd{})
 }
 
 type MsgMetadata struct {
@@ -25,6 +26,7 @@ type MsgMetadata struct {
 	Timestamp time.Time
 	Content string
 	Flag bool
+	Args int
 }
 
 type ResponseMD struct {
@@ -89,6 +91,8 @@ type KickBanCmd struct {
 type CreateCmd struct {
 	MsgMetadata
 	ResponseMD //for displaying error message if not having permission
+	Room string
+	Role int
 }
 
 type DeleteCmd struct {

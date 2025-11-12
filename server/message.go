@@ -8,6 +8,10 @@ import (
 )
 
 func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
+	//error check
+	if len(input.Content) == 0 {
+		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
+	}
 	//send to command factory
 	if input.Content[0] == '/' {
 		return CommandFactory(input, s)
@@ -18,11 +22,11 @@ func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableM
 
 func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	parts := strings.Fields(input.Content)
+	//set the args part of the metadata
+	input.Args = len(parts)
 	switch parts[0] {
 	case "/join":
-		//add metadata to the join type
-		join := &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input, Room: parts[1]}}
-		return join
+		return &JoinCmd{JoinCmd: &shared.JoinCmd{MsgMetadata: input}}
 	case "/leave":
 		return &LeaveCmd{LeaveCmd: &shared.LeaveCmd{MsgMetadata: input}}
 	case "/listusers":
@@ -32,9 +36,11 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 	case "/quit":
 		return &QuitCmd{QuitCmd: &shared.QuitCmd{MsgMetadata: input}}
 	case "/kick":
-		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: false, User: parts[1]}}
+		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: false, }}
 	case "/ban":
-		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: true, User: parts[1]}}
+		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: true, }}
+	case "/create":
+		return &CreateCmd{CreateCmd: &shared.CreateCmd{MsgMetadata: input}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -74,9 +80,16 @@ type JoinCmd struct {
 
 func (j *JoinCmd) ExecuteServer() {
 	s := GetServerState()
+	//check that the cmd was entered properly
+	if j.Args != 2 {
+		j.Reply.Status = false
+		j.Reply.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//set the room
+	parts := strings.Fields(j.Content)
+	j.Room = parts[1]
 	//first check that the room exists
-	log.Println(s.rooms)
-	log.Println("client attempting to join room:", j.Room)
 	result := contains(mapToSlice(s.rooms), j.Room)
 	if !result {
 		j.Reply.Status = false
@@ -135,6 +148,12 @@ type LeaveCmd struct {
 
 func (l *LeaveCmd) ExecuteServer() {
 	s := GetServerState()
+	//check that the cmd was entered properly
+	if l.Args != 1 {
+		l.Reply.Status = false
+		l.Reply.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
 	//check to see if the user is in a room
 	if _, exists := s.rooms[s.users[l.UserName].CurrentRoom]; !exists {
 		l.Reply.Status = false
@@ -163,6 +182,12 @@ type ListUsersCmd struct {
 
 func (lu *ListUsersCmd) ExecuteServer() {
 	s := GetServerState()
+	//check that the cmd was entered properly
+	if lu.Args != 2 {
+		lu.Reply.Status = false
+		lu.Reply.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
 	//check to see if a user is in a room
 	if _, exists := s.rooms[s.users[lu.UserName].CurrentRoom]; !exists {
 		lu.Reply.Status = false
@@ -220,12 +245,23 @@ func (q *QuitCmd) ExecuteServer() {
 func (q *QuitCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////// QUIT CMD and its execute functions ///////////////////////////////
+//////////////////////////// KICK/BAN CMD and its execute functions /////////////////////////////
 type KickBanCmd struct {
 	*shared.KickBanCmd
 }
 func (kb *KickBanCmd) ExecuteServer() {
 	s := GetServerState()
+	log.Println("1")
+	//check that the cmd was entered properly
+	if kb.Args != 2 {
+		kb.Status = false
+		kb.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//set user after verifying it exists
+	parts := strings.Fields(kb.Content)
+	kb.User = parts[1]
+	log.Println("2")
 	//first check user's role to see if they can execute
 	if (s.users[kb.UserName].Role < RoleAdmin) {
 		kb.Status = false
@@ -238,6 +274,7 @@ func (kb *KickBanCmd) ExecuteServer() {
 			kb.ErrMsg = "PERMISSION DENIED: User: " + kb.User + " does not exist on this server"
 			return
 		} else { //user exists
+			log.Println("3")
 			//check if kick and user online
 			if !s.users[kb.User].Active && !kb.Ban {
 				kb.Status = false
@@ -252,6 +289,7 @@ func (kb *KickBanCmd) ExecuteServer() {
 				remove(kb.User, room)
 				broadcast(kb.User, "left", kb.Timestamp, room)
 			}
+			log.Println("4")
 			var msg *Message
 			var update *Message
 			//if ban
@@ -264,19 +302,93 @@ func (kb *KickBanCmd) ExecuteServer() {
 				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
 				update = formatStaffMsg("You", "have been kicked!", kb.Timestamp)
 			}
-
+			log.Println("5")
 			broadcastToStaff(msg)
 			//update user, update its active state, then close its term channel
 			s.users[kb.User].RecvServer <- update
 			s.users[kb.User].Active = false
 			safeClose(s.users[kb.User].Term)
+			log.Println("6")
 		}
 	}
 }
 func (kb *KickBanCmd) ExecuteClient() {}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////// CREATE CMD and its execute functions //////////////////////////////
+type CreateCmd struct {
+	*shared.CreateCmd
+}
+func (c *CreateCmd) ExecuteServer() {
+	s := GetServerState()
+	//check that the cmd was entered properly
+	if c.Args != 3 {
+		c.Status = false
+		c.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//set room and role after verifying they exist
+	parts := strings.Fields(c.Content)
+	c.Room = parts[1]
+	c.Role = int(convToRole(parts[2]))
+
+	//first check user's role to see if they can execute
+	if (s.users[c.UserName].Role < RoleAdmin) {
+		c.Status = false
+		c.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	}
+	//check to see if the room already exists
+	if _, exists := s.rooms[c.Room]; exists {
+		c.Status = false
+		c.ErrMsg = "PERMISSION DENIED: Room already exists"
+		return
+	}
+	//check that the room name is in the correct format
+	if c.Room[0] != '#' {
+		c.Status = false
+		c.ErrMsg = "PERMISSION DENIED: New room name must begin with '#'"
+		return
+	}
+	//check that the user entered the correct permission
+	if c.Role == int(RoleBanned) {
+		c.Status = false
+		c.ErrMsg = "PERMISSION DENIED: Incorrect permission: must be 'all' or 'staff'"
+		return
+	}
+
+	//initialize the room's state
+	newRoom := Room{
+		users: make(map[string]*Member),
+		log: make([]shared.Message, 0),
+		permission: Role(c.Role),
+	}
+	//add new room to the server's state
+	s.rooms[c.Room] = &newRoom
+	//update user states
+	for _, user := range s.users {
+		//only update if they are at least the correct role
+		if user.Role >= newRoom.permission {
+			user.AvailableRooms = append(user.AvailableRooms, c.Room)
+		}
+	}
+	c.Status = true
+	c.ErrMsg = "SERVER: room " + c.Room + " was successfully created"
+}
+func (c *CreateCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////// DELETE CMD and its execute functions //////////////////////////////
+type DeleteCmd struct {
+	*shared.DeleteCmd
+}
+func (c *DeleteCmd) ExecuteServer() {
+	
+}
+func (c *DeleteCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {
@@ -340,10 +452,23 @@ func broadcastToStaff(msg *Message) {
 	s := GetServerState()
 	for name, user := range s.users {
 		if name == msg.UserName {
+			log.Println("7")
 			continue
-		} 
-		if user.Role >= RoleAdmin {
+		}
+		log.Println(user.Role)
+		if user.Role >= RoleAdmin && user.Active{
 			user.RecvServer <- msg
 		}
+	}
+	log.Println("8")
+}
+
+func convToRole(input string) Role {
+	if input == "staff" {
+		return RoleAdmin
+	} else if input == "all" {
+		return RoleMember
+	} else {
+		return RoleBanned //use to indicate the input was incorrect
 	}
 }

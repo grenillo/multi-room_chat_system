@@ -69,18 +69,19 @@ func initServer() {
 		//recvDispatcher: make(chan *Dispatcher),
 	}
 	//create initial rooms
-	instance.createRoom("#general")
-	instance.createRoom("#staff")
+	instance.createRoom("#general", RoleMember)
+	instance.createRoom("#staff", RoleAdmin)
 
-	//add admin
-	instance.users["grenillo"] = UserFactory("grenillo", RoleAdmin)
-	instance.users["grenillo2"] = UserFactory("grenillo2", RoleAdmin)
 	//start goroutine to run server
 	go instance.run()	
 	
 }
 
 func(s *ServerState) run() {
+	//add admin
+	instance.users["grenillo"] = UserFactory("grenillo", RoleAdmin)
+	instance.users["grenillo2"] = UserFactory("grenillo2", RoleAdmin)
+
 	for{
 		select {
 		//server management of users
@@ -154,7 +155,7 @@ func(s *ServerState) run() {
 }
 
 //helper function to create a room
-func (s *ServerState) createRoom(roomName string) {
+func (s *ServerState) createRoom(roomName string, role Role) {
 	if _, exists := s.rooms[roomName]; exists {
 		log.Println("Error: room already exists!")
 		return
@@ -163,6 +164,7 @@ func (s *ServerState) createRoom(roomName string) {
 	newRoom := Room{
 		users: make(map[string]*Member),
 		log: make([]shared.Message, 0),
+		permission: role,
 	}
 	//add new room to the server's state
 	s.rooms[roomName] = &newRoom

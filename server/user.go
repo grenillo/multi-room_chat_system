@@ -55,7 +55,7 @@ func defMember(username string, role Role) *Member {
 		return &Member {
 			User: *defUser(username, role),
 			CurrentRoom: "",
-			AvailableRooms: []string{"#general"},
+			AvailableRooms: getRooms(role),
 			ToServer: make(chan shared.MsgMetadata),
 			RecvServer: make(chan shared.ExecutableMessage),
 			Term: make(chan struct{}),
@@ -67,7 +67,6 @@ func defMember(username string, role Role) *Member {
 //function to define admin
 func defAdmin(username string, role Role) *Member {
 	member := *defMember(username, role)
-	member.AvailableRooms = append(member.AvailableRooms, "#staff")
 	member.Permissions = append(member.Permissions, "/kick", "/ban", "/createRoom", "/deleteRoom")
 	return &member
 }
@@ -108,7 +107,7 @@ func getUsage(role Role) []string {
 	if role >= RoleAdmin {
 		usage = append(usage, "/kick {user}")
 		usage = append(usage, "/ban {user}")
-		usage = append(usage, "/createRoom {roomName} {rolePermission}")
+		usage = append(usage, "/createRoom {roomName} {rolePermission: all or staff}")
 		usage = append(usage, "/deleteRoom {roomName}")
 	}
 	if role >= RoleOwner {
@@ -117,4 +116,19 @@ func getUsage(role Role) []string {
 	}
 	usage = append(usage, "/quit")
 	return usage
+}
+
+//dynamically populate user's list of available rooms during runtime
+func getRooms(role Role) []string {
+	var rooms []string
+	//get server state
+	s := GetServerState()
+	//loop through the current rooms
+	for name, room := range s.rooms {
+		//if user is at least the role of the room
+		if room.permission <= role {
+			rooms = append(rooms, name)
+		}
+	}
+	return rooms
 }

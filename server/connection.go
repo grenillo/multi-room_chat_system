@@ -80,6 +80,9 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 			
 		//if user/server is terminated
 		case <-user.Term:
+			var reply shared.ExecutableMessage
+			rawInput := shared.MsgMetadata{UserName: user.Username, Content: "/quit"}
+			s.RecvMessage(&rawInput, &reply)
 			close(user.RecvServer)
 			close(user.ToServer)
 			conn.Close()
@@ -140,6 +143,8 @@ func unwrapShared(msg interface{}) interface{} {
 		return m.QuitCmd		// *shared.QuitCMD
 	case *KickBanCmd:
 		return m.KickBanCmd		// *shared.KickBanCmd
+	case *CreateCmd:
+		return m.CreateCmd
     default:
         panic("error during unwrapping: unknown command type")
     }
