@@ -43,6 +43,10 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &CreateCmd{CreateCmd: &shared.CreateCmd{MsgMetadata: input}}
 	case "/delete":
 		return &DeleteCmd{DeleteCmd: &shared.DeleteCmd{MsgMetadata: input}}
+	case "/promote":
+		return &PromoteDemoteCmd{PromoteDemoteCmd: &shared.PromoteDemoteCmd{MsgMetadata: input, Promote: true}}
+	case "/demote":
+		return &PromoteDemoteCmd{PromoteDemoteCmd: &shared.PromoteDemoteCmd{MsgMetadata: input, Promote: false}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -432,6 +436,77 @@ func (d *DeleteCmd) ExecuteServer() {
 }
 func (d *DeleteCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////// PROMOTE CMD and its execute functions //////////////////////////////
+type PromoteDemoteCmd struct {
+	*shared.PromoteDemoteCmd
+}
+func (p *PromoteDemoteCmd) ExecuteServer() {
+	s := GetServerState()
+	//verify correct usage
+	if p.Args != 2 {
+		p.Status = false
+		p.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	parts := strings.Fields(p.Content)
+	p.User = parts[1]
+	//verify user can execute this command
+	if s.users[p.UserName].Role < RoleOwner {
+		p.Status = false
+		p.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	}
+	//verify specified user exists
+	if _, exists := s.users[p.User]; !exists {
+		p.Status = false
+		p.ErrMsg = "PERMISSION DENIED: User " + p.User + " does not exist" 
+		return	
+	}
+	//check specified user's current role
+	if s.users[p.User].Role == RoleAdmin && p.Promote {
+		p.Status = false
+		p.ErrMsg = "PERMISSION DENIED: User " + p.User + " is already an admin" 
+		return	
+	} else {
+		if s.users[p.User].Role == RoleMember && !p.Promote {
+			p.Status = false
+			p.ErrMsg = "PERMISSION DENIED: User " + p.User + " is already a member" 
+			return	
+		} 
+	}
+	var action, newrole string
+	var role Role
+	if p.Promote {
+		action = "promoted"
+		newrole = "to admin"
+		role = RoleAdmin
+	} else {
+		action = "demoted"
+		newrole = "to member"
+		role = RoleMember
+
+		//if member is currently in a staff only room, kick them out
+		if s.users[p.User].CurrentRoom != "" && s.rooms[s.users[p.User].CurrentRoom].permission > RoleMember {
+			force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: p.Timestamp, UserName: p.User, Flag: true }, Room: s.users[p.User].CurrentRoom, Reply: shared.ResponseMD{Status: true}}}
+			s.users[p.User].RecvServer <- force
+			remove(p.User, s.users[p.User].CurrentRoom)
+		}
+	}
+
+	//promote member to admin
+	s.users[p.User].updateUserState(role)
+
+	//notify staff
+	msg := formatStaffMsg(p.UserName, action + " " + p.User + " " + newrole, p.Timestamp)
+	broadcastToStaff(msg)
+	p.Status = true
+	p.ErrMsg = "SERVER: User " + p.User + " was successfully " + action + " " + newrole 
+}
+func (p *PromoteDemoteCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {

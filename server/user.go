@@ -1,6 +1,8 @@
 package server
 
-import "multi-room_chat_system/shared"
+import (
+	"multi-room_chat_system/shared"
+)
 
 
 type AdminReq struct {
@@ -107,8 +109,8 @@ func getUsage(role Role) []string {
 	if role >= RoleAdmin {
 		usage = append(usage, "/kick {user}")
 		usage = append(usage, "/ban {user}")
-		usage = append(usage, "/createRoom {roomName} {rolePermission: all or staff}")
-		usage = append(usage, "/deleteRoom {roomName}")
+		usage = append(usage, "/create {roomName} {rolePermission: all or staff}")
+		usage = append(usage, "/delete {roomName}")
 	}
 	if role >= RoleOwner {
 		usage = append(usage, "/promote {user}")
@@ -131,4 +133,23 @@ func getRooms(role Role) []string {
 		}
 	}
 	return rooms
+}
+
+func (m *Member) updateUserState(role Role) {
+	//get available rooms based on role
+	m.AvailableRooms = getRooms(role)
+	//set cmds
+	var cmds []string
+	if role >= RoleMember {
+		cmds = append(cmds, "/join", "/leave", "/listusers", "/help", "/quit")
+	}
+	if role >= RoleAdmin {
+		cmds = append(cmds, "/kick", "/ban", "/create", "/delete")
+	}
+	if role >= RoleOwner {
+		cmds = append(cmds, "/promote", "/demote")
+	}
+	//update permissions
+	m.Permissions = cmds
+	m.Role = role
 }

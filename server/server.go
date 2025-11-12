@@ -79,7 +79,7 @@ func initServer() {
 
 func(s *ServerState) run() {
 	//add admin
-	instance.users["grenillo"] = UserFactory("grenillo", RoleAdmin)
+	instance.users["grenillo"] = UserFactory("grenillo", RoleOwner)
 	instance.users["grenillo2"] = UserFactory("grenillo2", RoleAdmin)
 
 	for{

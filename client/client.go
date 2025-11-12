@@ -135,6 +135,8 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 		return &CreateCmd{CreateCmd: m}
 	case *shared.DeleteCmd:
 		return &DeleteCmd{DeleteCmd: m}
+	case *shared.PromoteDemoteCmd:
+		return &PromoteDemoteCmd{PromoteDemoteCmd: m}
     default:
         panic("error during wrapping: unknown shared type")
     }

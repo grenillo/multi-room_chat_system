@@ -150,6 +150,14 @@ func (d *DeleteCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////// PROMOTE CMD and its execute functions //////////////////////////////
+type PromoteDemoteCmd struct {
+	*shared.PromoteDemoteCmd
+}
+func (p *PromoteDemoteCmd) ExecuteServer() {}
+func (p *PromoteDemoteCmd) ExecuteClient() {
+	fmt.Println(p.ErrMsg)
+}
 
 
 func ClearScreen() {
