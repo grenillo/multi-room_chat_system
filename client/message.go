@@ -176,6 +176,28 @@ func (b* BroadcastCmd) ExecuteClient() {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////// SHUTDOWN CMD and its execute functions ////////////////////////////
+type ShutdownCmd struct {
+	*shared.ShutdownCmd
+}
+func (s *ShutdownCmd) ExecuteServer() {}
+func (s *ShutdownCmd) ExecuteClient() {
+	fmt.Println(s.ErrMsg)
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////// LISTROOMS CMD and its execute functions ////////////////////////////
+type ListRoomsCmd struct {
+	*shared.ListRoomsCmd
+}
+func (lr *ListRoomsCmd) ExecuteServer() {}
+func (lr *ListRoomsCmd) ExecuteClient() {
+	fmt.Println("===================================================")
+	fmt.Println(lr.ErrMsg)
+	fmt.Println("===================================================")
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 func ClearScreen() {
     fmt.Print("\033[2J\033[H\n")

@@ -28,6 +28,8 @@ type ServerState struct {
 	recvInput chan *shared.MsgMetadata
 	ackInput chan *shared.ExecutableMessage
 
+	term chan struct{}
+
 	//recvLogger chan *Logger
 	//recvDispatcher chan *Dispatcher
 
@@ -65,6 +67,7 @@ func initServer() {
 		//channels for message input
 		recvInput: make(chan *shared.MsgMetadata),
 		ackInput: make(chan *shared.ExecutableMessage),
+		term: make(chan struct{}),
 		//recvLogger: make(chan *Logger),
 		//recvDispatcher: make(chan *Dispatcher),
 	}
@@ -147,8 +150,10 @@ func(s *ServerState) run() {
 			msg.ExecuteServer()
 			//ack the RPC
 			s.ackInput <- &msg
-
-		default:
+		case <-s.term:
+			//write back the server's current state
+			log.Println("server terminated, returning")
+			return
 		}
 	}
 

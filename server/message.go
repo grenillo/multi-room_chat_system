@@ -51,6 +51,10 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		parts = strings.SplitN(input.Content, " ", 2)
 		input.Args = len(parts)
 		return &BroadcastCmd{BroadcastCmd: &shared.BroadcastCmd{MsgMetadata: input}}
+	case "/shutdown":
+		return &ShutdownCmd{ShutdownCmd: &shared.ShutdownCmd{MsgMetadata: input}}
+	case "/listrooms":
+		return &ListRoomsCmd{ListRoomsCmd: &shared.ListRoomsCmd{MsgMetadata: input}}
 	default:
 		return &HelpCmd{HelpCmd: &shared.HelpCmd{MsgMetadata: input, Invalid: true}}
 	}
@@ -192,7 +196,7 @@ type ListUsersCmd struct {
 func (lu *ListUsersCmd) ExecuteServer() {
 	s := GetServerState()
 	//check that the cmd was entered properly
-	if lu.Args != 2 {
+	if lu.Args != 1 {
 		lu.Reply.Status = false
 		lu.Reply.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
 		return
@@ -544,6 +548,77 @@ func (b* BroadcastCmd) ExecuteServer() {
 	}
 }
 func (b* BroadcastCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////// SHUTDOWN CMD and its execute functions ////////////////////////////
+type ShutdownCmd struct {
+	*shared.ShutdownCmd
+}
+func (sh *ShutdownCmd) ExecuteServer() {
+	s := GetServerState()
+	//verify correct usage
+	if sh.Args != 1 {
+		sh.Status = false
+		sh.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//verify user can execute this command
+	if s.users[sh.UserName].Role < RoleOwner {
+		sh.Status = false
+		sh.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	}
+	sh.Status = true
+	sh.ErrMsg = "SERVER: Shutdown was successful"
+	//use broadcast to notify everyone the server is shutting down
+	msg := &BroadcastCmd{BroadcastCmd: &shared.BroadcastCmd{
+		MsgMetadata: shared.MsgMetadata{
+			Timestamp: sh.Timestamp,
+			UserName:  "SERVER",
+			Flag:      true,
+			Content:   " is shutting down...",
+		},
+	}}
+	msg.Status = true
+	//for each user, close their termination channels
+	for name, user := range s.users {
+		//if user is in a room
+		if user.Active && user.CurrentRoom != "" {
+			broadcast(name, "left", sh.Timestamp, user.CurrentRoom)
+			remove(name, user.CurrentRoom)
+		}
+		if name == sh.UserName || !user.Active {
+			continue
+		}
+		//send to user
+		user.RecvServer <- msg
+		user.Active = false
+	}
+	//close the server's termination channel to prevent future requests
+	close(s.term)
+}
+func (sh *ShutdownCmd) ExecuteClient() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////// LISTROOMS CMD and its execute functions ////////////////////////////
+type ListRoomsCmd struct {
+	*shared.ListRoomsCmd
+}
+func (lr *ListRoomsCmd) ExecuteServer() {
+	s := GetServerState()
+	//check that the cmd was entered properly
+	if lr.Args != 1 {
+		lr.Status = false
+		lr.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	lr.ErrMsg = getJoinableRooms(s.users[lr.UserName])
+	lr.ErrMsg = strings.TrimSuffix(lr.ErrMsg, ">")
+	lr.Status = true
+}
+func (lr *ListRoomsCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 //HELPER FUNCTIONS

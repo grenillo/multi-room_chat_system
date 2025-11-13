@@ -42,8 +42,6 @@ func handleNewConnection(conn net.Conn) {
     writer.Flush()
 	//otherwise start goroutine to handle client requests
 	go handleConnection(reader, conn, resp.Role)
-	
-	
 }
 
 //function to asynchronously handle connections once they are verified
@@ -80,9 +78,15 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 			
 		//if user/server is terminated
 		case <-user.Term:
+			log.Println("user terminated, sending quit")
 			var reply shared.ExecutableMessage
 			rawInput := shared.MsgMetadata{UserName: user.Username, Content: "/quit"}
 			s.RecvMessage(&rawInput, &reply)
+			close(user.RecvServer)
+			close(user.ToServer)
+			conn.Close()
+			return
+		case <-s.term:
 			close(user.RecvServer)
 			close(user.ToServer)
 			conn.Close()
@@ -93,9 +97,12 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 }
 
 func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
+	s := GetServerState()
 	for {
 		select {
 		//if the termination channel is called for a user, terminate reader goroutine
+		case <-s.term:
+			return
 		case <-user.Term:
 			return
 		default:
@@ -151,6 +158,10 @@ func unwrapShared(msg interface{}) interface{} {
 		return m.PromoteDemoteCmd		
 	case *BroadcastCmd:
 		return m.BroadcastCmd	
+	case *ShutdownCmd:
+		return m.ShutdownCmd
+	case *ListRoomsCmd:
+		return m.ListRoomsCmd
     default:
         panic("error during unwrapping: unknown command type")
     }

@@ -142,13 +142,13 @@ func (m *Member) updateUserState(role Role) {
 	//set cmds
 	var cmds []string
 	if role >= RoleMember {
-		cmds = append(cmds, "/join", "/leave", "/listusers", "/help", "/quit")
+		cmds = append(cmds, "/join", "/leave", "/listusers", "/listrooms", "/help", "/quit")
 	}
 	if role >= RoleAdmin {
-		cmds = append(cmds, "/kick", "/ban", "/create", "/delete")
+		cmds = append(cmds, "/kick", "/ban", "/create", "/delete", "/broadcast")
 	}
 	if role >= RoleOwner {
-		cmds = append(cmds, "/promote", "/demote")
+		cmds = append(cmds, "/promote", "/demote", "/shutdown")
 	}
 	//update permissions
 	m.Permissions = cmds

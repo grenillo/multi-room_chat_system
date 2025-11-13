@@ -22,6 +22,8 @@ func Init() {
 	gob.Register(&DeleteCmd{})
 	gob.Register(&PromoteDemoteCmd{})
 	gob.Register(&BroadcastCmd{})
+	gob.Register(&ShutdownCmd{})
+	gob.Register(&ListRoomsCmd{})
 }
 
 type MsgMetadata struct {
@@ -115,4 +117,14 @@ type PromoteDemoteCmd struct {
 type BroadcastCmd struct {
 	MsgMetadata
 	ResponseMD
+}
+
+type ShutdownCmd struct {
+	MsgMetadata
+	ResponseMD
+}
+
+type ListRoomsCmd struct {
+	MsgMetadata
+	LUResp
 }
