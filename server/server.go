@@ -9,6 +9,7 @@ import (
 
 //internal state for the server
 type ServerState struct {
+	shutdownReq bool
 	//map usernames to Members
 	users map[string]*Member
 	//map roomName to chatRoom
@@ -54,6 +55,7 @@ func initServer() {
 	shared.Init()
 	log.Println("Starting server")
 	instance = &ServerState{
+		shutdownReq: false,
 		users: map[string]*Member{},
 		rooms: map[string]*Room{},
 		//logger: &Logger{},
@@ -72,8 +74,9 @@ func initServer() {
 		//recvDispatcher: make(chan *Dispatcher),
 	}
 	//create initial rooms
-	instance.createRoom("#general", RoleMember)
-	instance.createRoom("#staff", RoleAdmin)
+	//instance.createRoom("#general", RoleMember)
+	//instance.createRoom("#staff", RoleAdmin)
+	instance.LoadFromDisk()
 
 	//start goroutine to run server
 	go instance.run()	
@@ -82,8 +85,8 @@ func initServer() {
 
 func(s *ServerState) run() {
 	//add admin
-	instance.users["grenillo"] = UserFactory("grenillo", RoleOwner)
-	instance.users["grenillo2"] = UserFactory("grenillo2", RoleAdmin)
+	instance.users["owner"] = UserFactory("owner", RoleOwner)
+	instance.users["admin"] = UserFactory("admin", RoleAdmin)
 
 	for{
 		select {
@@ -150,9 +153,15 @@ func(s *ServerState) run() {
 			msg.ExecuteServer()
 			//ack the RPC
 			s.ackInput <- &msg
+			if s.shutdownReq {
+				//write back the server's current state
+				log.Println("SERVER: attempting to save state")
+				s.SaveToDisk()
+				log.Println("SERVER: state save successful")
+				close(s.term)
+			}
 		case <-s.term:
-			//write back the server's current state
-			log.Println("server terminated, returning")
+			log.Println("SERVER: terminated, returning")
 			return
 		}
 	}

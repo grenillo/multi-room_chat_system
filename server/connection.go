@@ -87,6 +87,7 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 			conn.Close()
 			return
 		case <-s.term:
+			log.Println("server terminated, exiting connection loop for", user.Username)
 			close(user.RecvServer)
 			close(user.ToServer)
 			conn.Close()

@@ -13,10 +13,10 @@ type Room struct {
 	permission Role
 }
 
-func (rm *Room) broadcast(msg *Message) {
+func (rm *Room) broadcast(msg *Message, sender string) {
 	for username, member := range rm.users {
-		//dont send self username
-        if msg.UserName == username {
+		//dont send self username, do not send sender username
+        if msg.UserName == username || username == sender {
 			continue
 		}
 		//send message to all connected users

@@ -79,7 +79,7 @@ func (m *Message) ExecuteServer() {
 	//broadcast to all other users
 	resp = shared.ResponseMD{Status: true}
 	m.Response = resp
-	s.rooms[s.users[m.UserName].CurrentRoom].broadcast(m)
+	s.rooms[s.users[m.UserName].CurrentRoom].broadcast(m, "")
 }
 
 func (m *Message) ExecuteClient() {}
@@ -134,7 +134,7 @@ func (j *JoinCmd) ExecuteServer() {
 	//check if user is in a different room, if they are, remove them from that room's state before proceeding
 	if s.users[j.UserName].CurrentRoom != "" && j.Room != s.users[j.UserName].CurrentRoom {
 		//broadcast user leaving to other members in that room
-		broadcast(j.UserName, "left", j.Timestamp, s.users[j.UserName].CurrentRoom)
+		broadcast(j.UserName, "left", j.Timestamp, s.users[j.UserName].CurrentRoom, "")
 		s.rooms[s.users[j.UserName].CurrentRoom].removeUser(s.users[j.UserName])
 	}
 	//add user to room
@@ -144,7 +144,7 @@ func (j *JoinCmd) ExecuteServer() {
 	s.users[j.UserName].CurrentRoom = j.Room
 
 	//broadcast and log user joining to all others currently in the room
-	broadcast(j.UserName, "joined", j.Timestamp, j.Room)
+	broadcast(j.UserName, "joined", j.Timestamp, j.Room, "")
 
 	//store the room's current state of messages in the response
 	j.Reply.Log = s.rooms[j.Room].log
@@ -177,7 +177,7 @@ func (l *LeaveCmd) ExecuteServer() {
 	l.Room = s.users[l.UserName].CurrentRoom
 	remove(l.UserName, l.Room)
 	//broadcast and log user leaving to all others currently in the room
-	broadcast(l.UserName, "left", l.Timestamp, l.Room)
+	broadcast(l.UserName, "left", l.Timestamp, l.Room, "")
 
 
 	//update user state
@@ -248,7 +248,7 @@ func (q *QuitCmd) ExecuteServer() {
 	if s.users[q.UserName].CurrentRoom != "" {
 		room := s.users[q.UserName].CurrentRoom
 		remove(q.UserName, room)
-		broadcast(q.UserName, "left", q.Timestamp, room)
+		broadcast(q.UserName, "left", q.Timestamp, room, "")
 	}
 	//set user status to false
 	s.users[q.UserName].Active = false
@@ -297,7 +297,7 @@ func (kb *KickBanCmd) ExecuteServer() {
 			if s.users[kb.User].CurrentRoom != "" {
 				room := s.users[kb.User].CurrentRoom
 				remove(kb.User, room)
-				broadcast(kb.User, "left", kb.Timestamp, room)
+				broadcast(kb.User, "left", kb.Timestamp, room, kb.UserName)
 			}
 			var msg *Message
 			var update *Message
@@ -571,32 +571,7 @@ func (sh *ShutdownCmd) ExecuteServer() {
 	}
 	sh.Status = true
 	sh.ErrMsg = "SERVER: Shutdown was successful"
-	//use broadcast to notify everyone the server is shutting down
-	msg := &BroadcastCmd{BroadcastCmd: &shared.BroadcastCmd{
-		MsgMetadata: shared.MsgMetadata{
-			Timestamp: sh.Timestamp,
-			UserName:  "SERVER",
-			Flag:      true,
-			Content:   " is shutting down...",
-		},
-	}}
-	msg.Status = true
-	//for each user, close their termination channels
-	for name, user := range s.users {
-		//if user is in a room
-		if user.Active && user.CurrentRoom != "" {
-			broadcast(name, "left", sh.Timestamp, user.CurrentRoom)
-			remove(name, user.CurrentRoom)
-		}
-		if name == sh.UserName || !user.Active {
-			continue
-		}
-		//send to user
-		user.RecvServer <- msg
-		user.Active = false
-	}
-	//close the server's termination channel to prevent future requests
-	close(s.term)
+	s.shutdownReq = true
 }
 func (sh *ShutdownCmd) ExecuteClient() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -640,7 +615,7 @@ func mapToSlice[V any](m map[string]V) []string {
 }
 
 
-func broadcast(username string, action string, timestamp time.Time, room string) {
+func broadcast(username string, action string, timestamp time.Time, room string, sender string) {
 	s := GetServerState()
 	//add user action to the room's log
 	m := shared.Message{
@@ -656,7 +631,7 @@ func broadcast(username string, action string, timestamp time.Time, room string)
 	s.rooms[room].log = append(s.rooms[room].log, m)
 
 	//broadcast user action to all other users in the room
-	s.rooms[room].broadcast(M)
+	s.rooms[room].broadcast(M, sender)
 }
 
 func remove(username string, room string) {

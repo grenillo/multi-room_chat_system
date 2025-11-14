@@ -1,0 +1,59 @@
+{
+ "Users": {
+  "admin": {
+   "Username": "admin",
+   "Role": 2
+  },
+  "owner": {
+   "Username": "owner",
+   "Role": 3
+  },
+  "user": {
+   "Username": "user",
+   "Role": 1
+  }
+ },
+ "Rooms": {
+  "#general": {
+   "Name": "#general",
+   "Permission": 1,
+   "Log": [
+    {
+     "Username": "user",
+     "Timestamp": "2025-11-13T18:57:48.186973-05:00",
+     "Content": " joined #general"
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-13T18:57:53.76045-05:00",
+     "Content": " joined #general"
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-13T18:57:58.363134-05:00",
+     "Content": "hi user!"
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-11-13T18:58:02.154469-05:00",
+     "Content": "hi owner!"
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-11-13T18:58:10.413312-05:00",
+     "Content": " left #general"
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-13T19:21:31.453691-05:00",
+     "Content": " joined #general"
+    }
+   ]
+  },
+  "#staff": {
+   "Name": "#staff",
+   "Permission": 2,
+   "Log": []
+  }
+ }
+}
