@@ -32,6 +32,8 @@ func handleNewConnection(conn net.Conn) {
 	s.JoinServer(username, resp)
 	//if user is banned
 	if !resp.Status {
+		log.Println("user is banned")
+		log.Println(resp.Message)
 		writer.WriteString(resp.Message)
         writer.Flush()
         conn.Close()
@@ -131,7 +133,8 @@ func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
 	if err != nil {
         fmt.Println("Error sending ExecutableMessage:", err)
         return err
-    }
+	}
+		log.Println("sent gob message to client")
     return nil
 }
 

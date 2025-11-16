@@ -70,19 +70,20 @@ func (m *Message) ExecuteServer() {
 	var resp shared.ResponseMD
 	//check that user is in a room
 	if s.users[m.UserName].CurrentRoom == "" {
-		resp = shared.ResponseMD{Status: false, ErrMsg: "PERMISSION DENIED: User is not currently in a room"}
+		resp = shared.ResponseMD{Status: false, ErrMsg: "PERMISSION DENIED: User is not currently in a room", CurrentRoom: ""}
 		m.Response = resp
 		return
 	}
 	//user in room, log message
 	s.rooms[s.users[m.UserName].CurrentRoom].log = append(s.rooms[s.users[m.UserName].CurrentRoom].log, *m.Message)
 	//broadcast to all other users
-	resp = shared.ResponseMD{Status: true}
+	resp = shared.ResponseMD{Status: true, CurrentRoom: s.users[m.UserName].CurrentRoom}
 	m.Response = resp
+	log.Println("Message room:", resp.CurrentRoom)
 	s.rooms[s.users[m.UserName].CurrentRoom].broadcast(m, "")
 }
 
-func (m *Message) ExecuteClient() {}
+func (m *Message) ExecuteClient(ui shared.ClientUI) {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -93,6 +94,7 @@ type JoinCmd struct {
 
 func (j *JoinCmd) ExecuteServer() {
 	s := GetServerState()
+	j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if j.Args != 2 {
 		j.Reply.Status = false
@@ -142,6 +144,7 @@ func (j *JoinCmd) ExecuteServer() {
 	j.Reply.Status = true
 	//update user's room
 	s.users[j.UserName].CurrentRoom = j.Room
+	j.Reply.CurrentRoom = j.Room
 
 	//broadcast and log user joining to all others currently in the room
 	broadcast(j.UserName, "joined", j.Timestamp, j.Room, "")
@@ -150,7 +153,7 @@ func (j *JoinCmd) ExecuteServer() {
 	j.Reply.Log = s.rooms[j.Room].log
 
 }
-func (j *JoinCmd) ExecuteClient() {}
+func (j *JoinCmd) ExecuteClient(ui shared.ClientUI) {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -161,6 +164,7 @@ type LeaveCmd struct {
 
 func (l *LeaveCmd) ExecuteServer() {
 	s := GetServerState()
+	l.Reply.CurrentRoom = s.users[l.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if l.Args != 1 {
 		l.Reply.Status = false
@@ -176,6 +180,7 @@ func (l *LeaveCmd) ExecuteServer() {
 	//remove user from their requested room
 	l.Room = s.users[l.UserName].CurrentRoom
 	remove(l.UserName, l.Room)
+	l.Reply.CurrentRoom = l.Room
 	//broadcast and log user leaving to all others currently in the room
 	broadcast(l.UserName, "left", l.Timestamp, l.Room, "")
 
@@ -184,7 +189,7 @@ func (l *LeaveCmd) ExecuteServer() {
 	l.Reply.Status = true
 }
 
-func (l *LeaveCmd) ExecuteClient() {}
+func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -195,6 +200,7 @@ type ListUsersCmd struct {
 
 func (lu *ListUsersCmd) ExecuteServer() {
 	s := GetServerState()
+	lu.Reply.CurrentRoom = s.users[lu.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if lu.Args != 1 {
 		lu.Reply.Status = false
@@ -215,7 +221,7 @@ func (lu *ListUsersCmd) ExecuteServer() {
 	lu.Reply.Room = s.users[lu.UserName].CurrentRoom
 }
 
-func (lu *ListUsersCmd) ExecuteClient() {}
+func (lu *ListUsersCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////// HELP CMD and its execute functions ///////////////////////////////
@@ -225,6 +231,7 @@ type HelpCmd struct {
 
 func (h *HelpCmd) ExecuteServer() {
 	s := GetServerState()
+	h.Reply.CurrentRoom = s.users[h.UserName].CurrentRoom
 	if h.Invalid {
 		h.Reply.Status = false
 		h.Reply.ErrMsg = "PERMISSION DENIED: Invalid command, enter /help for more information"
@@ -233,7 +240,7 @@ func (h *HelpCmd) ExecuteServer() {
 	h.Reply.Status = true
 	h.Reply.Usage = getUsage(s.users[h.UserName].Role)
 }
-func (h *HelpCmd) ExecuteClient() {}
+func (h *HelpCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -244,6 +251,7 @@ type QuitCmd struct {
 //user will always be able to quit
 func (q *QuitCmd) ExecuteServer() {
 	s := GetServerState()
+	q.CurrentRoom = ""
 	//check if user is in a room
 	if s.users[q.UserName].CurrentRoom != "" {
 		room := s.users[q.UserName].CurrentRoom
@@ -255,7 +263,7 @@ func (q *QuitCmd) ExecuteServer() {
 	//close this connectionHandler once response is sent
 	safeClose(s.users[q.UserName].Term)
 }
-func (q *QuitCmd) ExecuteClient() {}
+func (q *QuitCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////// KICK/BAN CMD and its execute functions /////////////////////////////
@@ -264,6 +272,7 @@ type KickBanCmd struct {
 }
 func (kb *KickBanCmd) ExecuteServer() {
 	s := GetServerState()
+	kb.CurrentRoom = s.users[kb.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if kb.Args != 2 {
 		kb.Status = false
@@ -319,7 +328,7 @@ func (kb *KickBanCmd) ExecuteServer() {
 		}
 	}
 }
-func (kb *KickBanCmd) ExecuteClient() {}
+func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -329,6 +338,7 @@ type CreateCmd struct {
 }
 func (c *CreateCmd) ExecuteServer() {
 	s := GetServerState()
+	c.CurrentRoom = s.users[c.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if c.Args != 3 {
 		c.Status = false
@@ -383,7 +393,7 @@ func (c *CreateCmd) ExecuteServer() {
 	c.Status = true
 	c.ErrMsg = "SERVER: room " + c.Room + " was successfully created"
 }
-func (c *CreateCmd) ExecuteClient() {}
+func (c *CreateCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -393,6 +403,7 @@ type DeleteCmd struct {
 }
 func (d *DeleteCmd) ExecuteServer() {
 	s := GetServerState()
+	d.CurrentRoom = s.users[d.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if d.Args != 2 {
 		d.Status = false
@@ -441,7 +452,7 @@ func (d *DeleteCmd) ExecuteServer() {
 	d.ErrMsg = "SERVER: Sucessfully deleted " + d.Room
 	d.Status = true
 }
-func (d *DeleteCmd) ExecuteClient() {}
+func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -451,6 +462,7 @@ type PromoteDemoteCmd struct {
 }
 func (p *PromoteDemoteCmd) ExecuteServer() {
 	s := GetServerState()
+	p.CurrentRoom = s.users[p.UserName].CurrentRoom
 	//verify correct usage
 	if p.Args != 2 {
 		p.Status = false
@@ -511,7 +523,7 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 	p.Status = true
 	p.ErrMsg = "SERVER: User " + p.User + " was successfully " + action + " " + newrole 
 }
-func (p *PromoteDemoteCmd) ExecuteClient() {}
+func (p *PromoteDemoteCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -521,6 +533,7 @@ type BroadcastCmd struct {
 }
 func (b* BroadcastCmd) ExecuteServer() {
 	s := GetServerState()
+	b.CurrentRoom = s.users[b.UserName].CurrentRoom
 	//verify correct usage
 	if b.Args != 2 {
 		b.Status = false
@@ -547,7 +560,7 @@ func (b* BroadcastCmd) ExecuteServer() {
 		user.RecvServer <- b
 	}
 }
-func (b* BroadcastCmd) ExecuteClient() {}
+func (b* BroadcastCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -557,6 +570,7 @@ type ShutdownCmd struct {
 }
 func (sh *ShutdownCmd) ExecuteServer() {
 	s := GetServerState()
+	sh.CurrentRoom = s.users[sh.UserName].CurrentRoom
 	//verify correct usage
 	if sh.Args != 1 {
 		sh.Status = false
@@ -573,7 +587,7 @@ func (sh *ShutdownCmd) ExecuteServer() {
 	sh.ErrMsg = "SERVER: Shutdown was successful"
 	s.shutdownReq = true
 }
-func (sh *ShutdownCmd) ExecuteClient() {}
+func (sh *ShutdownCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -583,6 +597,7 @@ type ListRoomsCmd struct {
 }
 func (lr *ListRoomsCmd) ExecuteServer() {
 	s := GetServerState()
+	lr.CurrentRoom = s.users[lr.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if lr.Args != 1 {
 		lr.Status = false
@@ -593,7 +608,7 @@ func (lr *ListRoomsCmd) ExecuteServer() {
 	lr.ErrMsg = strings.TrimSuffix(lr.ErrMsg, ">")
 	lr.Status = true
 }
-func (lr *ListRoomsCmd) ExecuteClient() {}
+func (lr *ListRoomsCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 //HELPER FUNCTIONS
@@ -625,12 +640,13 @@ func broadcast(username string, action string, timestamp time.Time, room string,
 			Flag:      true,
 			Content:   " " + action + " " + room,
 		},
-		Response: shared.ResponseMD{Status: true},
+		Response: shared.ResponseMD{Status: true, CurrentRoom: room},
 	}
 	M := &Message{Message: &m}
 	s.rooms[room].log = append(s.rooms[room].log, m)
 
 	//broadcast user action to all other users in the room
+	log.Println("broadcasting message to room", room)
 	s.rooms[room].broadcast(M, sender)
 }
 
@@ -662,6 +678,7 @@ func broadcastToStaff(msg *Message) {
 		}
 		log.Println(user.Role)
 		if user.Role >= RoleAdmin && user.Active{
+			msg.Response.CurrentRoom = user.CurrentRoom
 			user.RecvServer <- msg
 		}
 	}

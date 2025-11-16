@@ -6,7 +6,18 @@ import "time"
 //define all methods a message should have
 type ExecutableMessage interface {
 	ExecuteServer() //broadcast or command functionality
-	ExecuteClient()
+	ExecuteClient(ui ClientUI)
+}
+
+type ClientUI interface {
+	Display(room string, text string)
+	ClearRoom(room string)
+	ClearLobby()
+	SelectRoom(room string)   // highlight/select a room in the list
+    DeselectRoom() 
+	SetRooms(newRooms []string)
+	AddRoom(room string)
+	RemoveRoom(room string)
 }
 
 func Init() {
@@ -37,6 +48,7 @@ type MsgMetadata struct {
 type ResponseMD struct {
 	Status bool
 	ErrMsg string
+	CurrentRoom string
 }
 
 //message types
@@ -84,6 +96,7 @@ type HelpResp struct {
 
 type QuitCmd struct {
 	MsgMetadata
+	CurrentRoom string
 }
 
 type KickBanCmd struct {

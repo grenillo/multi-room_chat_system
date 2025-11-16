@@ -11,6 +11,10 @@
   "user": {
    "Username": "user",
    "Role": 1
+  },
+  "banned": {
+   "Username": "banned",
+   "Role": 0
   }
  },
  "Rooms": {

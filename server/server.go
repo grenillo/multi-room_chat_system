@@ -133,7 +133,7 @@ func(s *ServerState) run() {
 					} else {
 						resp = ServerJoinResponse{
 							Status: false,
-							Message: "PERMISSION DENIED: You are banned!\n",
+							Message: "PERMISSION DENIED: You are banned!\n>",
 							Role: s.users[username],
 						}
 					}

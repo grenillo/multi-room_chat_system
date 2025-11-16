@@ -1,16 +1,18 @@
 package client
 
 import (
-	"bufio"
+	//"bufio"
 	"encoding/gob"
 	"fmt"
 	"io"
+	"log"
 	"multi-room_chat_system/shared"
-	"net"
-	"os"
-	"strings"
+	//"net"
+	//"os"
+	//"strings"
 )
 
+/*
 func StartClient() {
 	//register types with gob for tcp
 	shared.Init()
@@ -79,7 +81,8 @@ func getInput(conn net.Conn,  term chan struct{}) {
 		fmt.Fprintln(conn, input)
 	}
 }
-
+*/
+/*
 func outputFromServer(conn net.Conn, term chan struct{}) {
 	decoder := gob.NewDecoder(conn)
 	for {
@@ -94,9 +97,10 @@ func outputFromServer(conn net.Conn, term chan struct{}) {
             }
 			//execute client-side logic sent from server state
 			msg.ExecuteClient()
-		}	
+		}
 	}
 }
+*/
 
 func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage{
 	//create new message to return
@@ -111,6 +115,7 @@ func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.Executab
         close(term) // terminate client if decoding fails
         return nil
 	}
+	log.Println("client received gob message from server")
 	//otherwise return executable to client
 	return wrapShared(msg)
 }

@@ -1,17 +1,19 @@
 package main
 
 import (
-	//"multi-room_chat_system/client"
+	"multi-room_chat_system/client"
 	//"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+	//"fyne.io/fyne/v2/app"
+	//"fyne.io/fyne/v2/container"
+	//"fyne.io/fyne/v2/widget"
 
-	"fyne.io/fyne/v2"
+	//"fyne.io/fyne/v2"
 )
 
 func main() {
+	client.TestWindow()
 	//client.StartClient()
+	/*
 	rooms := []string{"#general", "#staff"}
 
 	a := app.New()
@@ -86,6 +88,7 @@ func main() {
 
 	w.SetContent(split)
 	w.ShowAndRun()
+	*/
 }
 
 
