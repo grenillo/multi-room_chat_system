@@ -114,7 +114,7 @@ func(s *ServerState) run() {
 				if s.users[username].Active {
 					resp = ServerJoinResponse{
 						Status: false,
-						Message: "PERMISSION DENIED: " + username + " is currently logged in!\n",
+						Message: "PERMISSION DENIED: " + username + " is currently logged in!\n>",
 						Role: s.users[username],
 					}
 				} else { //user not logged in
@@ -167,36 +167,6 @@ func(s *ServerState) run() {
 	}
 
 }
-
-//helper function to create a room
-func (s *ServerState) createRoom(roomName string, role Role) {
-	if _, exists := s.rooms[roomName]; exists {
-		log.Println("Error: room already exists!")
-		return
-	}
-	//initialize the room's state
-	newRoom := Room{
-		users: make(map[string]*Member),
-		log: make([]shared.Message, 0),
-		permission: role,
-	}
-	//add new room to the server's state
-	s.rooms[roomName] = &newRoom
-	log.Println("SERVER: CREATED ROOM", roomName)
-}
-
-//helper function to remove a room
-/*
-func (s *ServerState) deleteRoom(roomName string) {
-	if _, exists := s.rooms[roomName]; !exists {
-		log.Println("Error: room does not exist!")
-		return
-	}
-	//remove it from the server's state
-	delete(s.rooms, roomName)
-}
-*/
-
 
 //join server RPC stub
 func (s *ServerState) JoinServer(username string, reply *ServerJoinResponse) error {

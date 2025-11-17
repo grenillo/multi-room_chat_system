@@ -40,6 +40,7 @@ func Init() {
 	gob.Register(&RoomUpdate{})
 	gob.Register(&UserUpdate{})
 	gob.Register(&UnBanCmd{})
+	gob.Register(&ImageMsg{})
 }
 
 type MsgMetadata struct {
@@ -165,4 +166,11 @@ type RoomUpdate struct {
 type UserUpdate struct {
 	Promote bool
 	Rooms []string
+}
+
+type ImageMsg struct {
+	MsgMetadata
+	ResponseMD
+	File bool
+	Path string
 }
