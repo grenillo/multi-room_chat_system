@@ -69,7 +69,7 @@ func defMember(username string, role Role) *Member {
 //function to define admin
 func defAdmin(username string, role Role) *Member {
 	member := *defMember(username, role)
-	member.Permissions = append(member.Permissions, "/kick", "/ban", "/createRoom", "/deleteRoom")
+	member.Permissions = append(member.Permissions, "/kick", "/ban", "/unban", "/createRoom", "/deleteRoom")
 	return &member
 }
 
@@ -109,6 +109,7 @@ func getUsage(role Role) []string {
 	if role >= RoleAdmin {
 		usage = append(usage, "/kick {user}")
 		usage = append(usage, "/ban {user}")
+		usage = append(usage, "/unban {user}")
 		usage = append(usage, "/create {roomName} {rolePermission: all or staff}")
 		usage = append(usage, "/delete {roomName}")
 		usage = append(usage, "/broadcast {msg}")
@@ -149,7 +150,7 @@ func (m *Member) updateUserState(role Role, update *UserUpdate) {
 		cmds = append(cmds, "/join", "/leave", "/listusers", "/listrooms", "/help", "/quit")
 	}
 	if role >= RoleAdmin {
-		cmds = append(cmds, "/kick", "/ban", "/create", "/delete", "/broadcast")
+		cmds = append(cmds, "/kick", "/ban", "/unban","/create", "/delete", "/broadcast")
 	}
 	if role >= RoleOwner {
 		cmds = append(cmds, "/promote", "/demote", "/shutdown")

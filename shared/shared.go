@@ -39,6 +39,7 @@ func Init() {
 	gob.Register(&ListRoomsCmd{})
 	gob.Register(&RoomUpdate{})
 	gob.Register(&UserUpdate{})
+	gob.Register(&UnBanCmd{})
 }
 
 type MsgMetadata struct {
@@ -109,6 +110,14 @@ type KickBanCmd struct {
 	Ban bool
 	User string
 	Sender bool
+	InRoom bool
+	Msg Message
+}
+
+type UnBanCmd struct {
+	MsgMetadata
+	ResponseMD //for displaying error message if not having permission
+	User string
 }
 
 type CreateCmd struct {

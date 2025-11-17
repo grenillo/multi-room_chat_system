@@ -352,6 +352,9 @@ func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {
 		return
 	}
 	if kb.Sender {
+		if kb.InRoom {
+			ui.Display(kb.CurrentRoom, formatMessage(false, &kb.Msg, nil))
+		}
 		if kb.Ban {
 			ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was banned successfully")
 			return
@@ -361,7 +364,16 @@ func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {
 		ui.UserQuit(kb.ErrMsg)
 	}
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////// UNBAN CMD and its execute functions ///////////////////////////////
+type UnBanCmd struct {
+	*shared.UnBanCmd
+}
+func (u *UnBanCmd) ExecuteServer()() {}
+func (u *UnBanCmd) ExecuteClient(ui shared.ClientUI)() {
+	ui.Display(u.CurrentRoom, u.ErrMsg)
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////// CREATE CMD and its execute functions //////////////////////////////

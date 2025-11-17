@@ -154,6 +154,8 @@ func unwrapShared(msg interface{}) interface{} {
 		return m.QuitCmd		
 	case *KickBanCmd:
 		return m.KickBanCmd		
+	case *UnBanCmd:
+		return m.UnBanCmd
 	case *CreateCmd:
 		return m.CreateCmd	
 	case *DeleteCmd:

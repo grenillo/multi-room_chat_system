@@ -137,6 +137,8 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 		return &QuitCmd{QuitCmd: m}
 	case *shared.KickBanCmd:
 		return &KickBanCmd{KickBanCmd: m}
+	case *shared.UnBanCmd:
+		return &UnBanCmd{UnBanCmd: m}
 	case *shared.CreateCmd:
 		return &CreateCmd{CreateCmd: m}
 	case *shared.DeleteCmd:

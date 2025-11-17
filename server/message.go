@@ -40,6 +40,8 @@ func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.Executable
 		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: false, }}
 	case "/ban":
 		return &KickBanCmd{KickBanCmd: &shared.KickBanCmd{MsgMetadata: input, Ban: true, }}
+	case "/unban":
+		return &UnBanCmd{UnBanCmd: &shared.UnBanCmd{MsgMetadata: input}}
 	case "/create":
 		return &CreateCmd{CreateCmd: &shared.CreateCmd{MsgMetadata: input}}
 	case "/delete":
@@ -310,14 +312,15 @@ func (kb *KickBanCmd) ExecuteServer() {
 			//otherwise, check if that user is in a room
 			kb.Status = true
 			//check if user is in a room
+			var self *Message
 			if s.users[kb.User].CurrentRoom != "" {
 				room := s.users[kb.User].CurrentRoom
 				remove(kb.User, room)
-				broadcast(kb.User, "left", kb.Timestamp, room, kb.UserName)
+				self = broadcast(kb.User, "left", kb.Timestamp, room, kb.UserName)
 			}
-			var msg *Message
 			update := &KickBanCmd{KickBanCmd: &shared.KickBanCmd{Sender: false}}
 			update.Status = true
+			var msg *Message
 			//if ban
 			if kb.Ban {
 				s.users[kb.User].Role = RoleBanned
@@ -329,11 +332,18 @@ func (kb *KickBanCmd) ExecuteServer() {
 				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
 				update.ErrMsg = "You have been kicked!"
 			}
+			//if sender is in the same room as the specified user
+			if s.users[kb.UserName].CurrentRoom != "" && s.users[kb.UserName].CurrentRoom ==  s.users[kb.User].CurrentRoom {
+				kb.Msg = *self.Message
+				kb.InRoom = true
+			}
 			broadcastToStaff(msg)
-			//update user, update its active state, then close its term channel
-			s.users[kb.User].RecvServer <- update
-			s.users[kb.User].Active = false
-			safeClose(s.users[kb.User].Term)
+			if s.users[kb.User].Active {
+				//update user, update its active state, then close its term channel
+				s.users[kb.User].RecvServer <- update
+				s.users[kb.User].Active = false
+				safeClose(s.users[kb.User].Term)
+			}
 			kb.Sender = true
 		}
 	}
@@ -341,6 +351,46 @@ func (kb *KickBanCmd) ExecuteServer() {
 func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////// UNBAN CMD and its execute functions ///////////////////////////////
+type UnBanCmd struct {
+	*shared.UnBanCmd
+}
+func (u *UnBanCmd) ExecuteServer() {
+	s := GetServerState()
+	u.CurrentRoom = s.users[u.UserName].CurrentRoom
+	//check that the cmd was entered properly
+	if u.Args != 2 {
+		u.Status = false
+		u.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
+		return
+	}
+	//set user after verifying it exists
+	parts := strings.Fields(u.Content)
+	u.User = parts[1]
+	//first check user's role to see if they can execute
+	if (s.users[u.UserName].Role < RoleAdmin) {
+		u.Status = false
+		u.ErrMsg = "PERMISSION DENIED: You do not have permission to execute this command"
+		return
+	} else { //is an admin or owner
+		//check to see if the specified user exists
+		if _, exists := s.users[u.User]; !exists {
+			u.Status = false
+			u.ErrMsg = "PERMISSION DENIED: User: " + u.User + " does not exist on this server"
+			return
+		} else { //user exists in the banned state
+			//update the user's role
+			s.users[u.User].Role = RoleMember
+			//broadcast to all staff
+			msg := formatStaffMsg(u.UserName, "unbanned user: " + u.User, u.Timestamp)
+			broadcastToStaff(msg)
+			u.ErrMsg = "[SERVER] " + u.User + " successfully unbanned"
+		}
+	}
+}
+func (u *UnBanCmd) ExecuteClient(ui shared.ClientUI)() {}
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////// CREATE CMD and its execute functions //////////////////////////////
 type CreateCmd struct {
@@ -671,7 +721,7 @@ func mapToSlice[V any](m map[string]V) []string {
 }
 
 
-func broadcast(username string, action string, timestamp time.Time, room string, sender string) {
+func broadcast(username string, action string, timestamp time.Time, room string, sender string) *Message{
 	s := GetServerState()
 	//add user action to the room's log
 	m := shared.Message{
@@ -689,6 +739,7 @@ func broadcast(username string, action string, timestamp time.Time, room string,
 	//broadcast user action to all other users in the room
 	log.Println("broadcasting message to room", room)
 	s.rooms[room].broadcast(M, sender)
+	return M
 }
 
 func remove(username string, room string) {
