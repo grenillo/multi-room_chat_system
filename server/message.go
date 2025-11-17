@@ -686,8 +686,16 @@ func (lr *ListRoomsCmd) ExecuteServer() {
 		lr.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
 		return
 	}
-	lr.ErrMsg = getJoinableRooms(s.users[lr.UserName])
-	lr.ErrMsg = strings.TrimSuffix(lr.ErrMsg, ">")
+	rooms := getRooms(s.users[lr.UserName].Role)
+	resp := "Available rooms:\n"
+	for i, r := range rooms {
+		if i == len(rooms) - 1 {
+			resp += "\t" + r
+			continue
+		}
+		resp += "\t" + r + "\n"
+	}
+	lr.ErrMsg = resp
 	lr.Status = true
 }
 func (lr *ListRoomsCmd) ExecuteClient(ui shared.ClientUI)() {}

@@ -379,7 +379,7 @@ func getInitRooms(msg string) []string {
 	roomStr := strings.TrimSpace(parts[1])
 
 	//split by spaces
-	roomsWithDelim := strings.Fields(roomStr) // ["#general", "#sports", "#random>"]
+	roomsWithDelim := strings.Fields(roomStr)
 
 	//trim any trailing '>' from room
 	var rooms []string
