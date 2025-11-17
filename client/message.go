@@ -351,13 +351,15 @@ func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {
 		ui.Display(kb.CurrentRoom, kb.ErrMsg)
 		return
 	}
-	if kb.Ban {
-		ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was banned successfully")
-		//fmt.Println("SERVER:", kb.User ,"was banned successfully")
-		return
+	if kb.Sender {
+		if kb.Ban {
+			ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was banned successfully")
+			return
+		}
+		ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was kicked successfully")
+	} else {
+		ui.UserQuit(kb.ErrMsg)
 	}
-	ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was kicked successfully")
-	//fmt.Println("SERVER:", kb.User,"was kicked successfully")
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

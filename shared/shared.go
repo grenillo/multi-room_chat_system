@@ -108,6 +108,7 @@ type KickBanCmd struct {
 	ResponseMD //for displaying error message if not having permission
 	Ban bool
 	User string
+	Sender bool
 }
 
 type CreateCmd struct {

@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 	"multi-room_chat_system/shared"
+	//"runtime/trace"
 	"strings"
 	"time"
 )
@@ -315,22 +316,25 @@ func (kb *KickBanCmd) ExecuteServer() {
 				broadcast(kb.User, "left", kb.Timestamp, room, kb.UserName)
 			}
 			var msg *Message
-			var update *Message
+			update := &KickBanCmd{KickBanCmd: &shared.KickBanCmd{Sender: false}}
+			update.Status = true
 			//if ban
 			if kb.Ban {
 				s.users[kb.User].Role = RoleBanned
 				//broadcast ban to staff
 				msg = formatStaffMsg(kb.UserName, "banned user: " + kb.User, kb.Timestamp)
-				update = formatStaffMsg("You", "have been banned!", kb.Timestamp)
+				//update = formatStaffMsg("You", "have been banned!", kb.Timestamp)
+				update.ErrMsg = "You have been banned!"
 			} else {
 				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
-				update = formatStaffMsg("You", "have been kicked!", kb.Timestamp)
+				update.ErrMsg = "You have been kicked!"
 			}
 			broadcastToStaff(msg)
 			//update user, update its active state, then close its term channel
 			s.users[kb.User].RecvServer <- update
 			s.users[kb.User].Active = false
 			safeClose(s.users[kb.User].Term)
+			kb.Sender = true
 		}
 	}
 }
