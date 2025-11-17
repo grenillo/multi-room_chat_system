@@ -94,9 +94,9 @@ type JoinCmd struct {
 
 func (j *JoinCmd) ExecuteServer() {
 	s := GetServerState()
-	j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 	//check that the cmd was entered properly
 	if j.Args != 2 {
+		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 		j.Reply.Status = false
 		j.Reply.ErrMsg = "PERMISSION DENIED: Incorrect usage, enter /help for more information"
 		return
@@ -107,6 +107,7 @@ func (j *JoinCmd) ExecuteServer() {
 	//first check that the room exists
 	result := contains(mapToSlice(s.rooms), j.Room)
 	if !result {
+		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 		j.Reply.Status = false
 		j.Reply.ErrMsg = "PERMISSION DENIED: Room does not exist"
 		return
@@ -115,12 +116,16 @@ func (j *JoinCmd) ExecuteServer() {
 	result = contains(s.users[j.UserName].AvailableRooms, j.Room)
 	//if room DNE, set status to false and return
 	if !result {
+		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 		j.Reply.Status = false
 		j.Reply.ErrMsg = "PERMISSION DENIED: Join room request failed"
 		return
 	}
 	//check if the user is already in this room
+	log.Println("currRoom:", s.users[j.UserName].CurrentRoom)
+	log.Println("jRoom:", j.Room)
 	if s.users[j.UserName].CurrentRoom == j.Room {
+		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 		j.Reply.Status = false
 		j.Reply.ErrMsg = "PERMISSION DENIED: User already in specified room"
 		return
@@ -128,11 +133,12 @@ func (j *JoinCmd) ExecuteServer() {
 	//check if the user has permission to join this room
 	//banned < member < admin < owner, so if user's role is less than the required permission
 	if s.users[j.UserName].Role < s.rooms[j.Room].permission {
+		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 		j.Reply.Status = false
 		j.Reply.ErrMsg = "PERMISSION DENIED: User role does not have access to room"
 		return
 	}
-	
+	j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
 	//check if user is in a different room, if they are, remove them from that room's state before proceeding
 	if s.users[j.UserName].CurrentRoom != "" && j.Room != s.users[j.UserName].CurrentRoom {
 		//broadcast user leaving to other members in that room
@@ -383,11 +389,20 @@ func (c *CreateCmd) ExecuteServer() {
 	}
 	//add new room to the server's state
 	s.rooms[c.Room] = &newRoom
+	//create live update object
+	rmUpdate := &RoomUpdate{RoomUpdate: &shared.RoomUpdate{Create: true, Room: c.Room}}
 	//update user states
-	for _, user := range s.users {
+	for name, user := range s.users {
 		//only update if they are at least the correct role
 		if user.Role >= newRoom.permission {
 			user.AvailableRooms = append(user.AvailableRooms, c.Room)
+			//if user is not active or self, do not broadcast live update
+			if !user.Active || name == c.UserName {
+				continue
+			}
+			//send update to user
+			user.RecvServer <- rmUpdate
+			
 		}
 	}
 	c.Status = true
@@ -431,6 +446,8 @@ func (d *DeleteCmd) ExecuteServer() {
 	}
 	//generate special leave cmd to send to users
 	force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: d.Timestamp, UserName: d.UserName, Flag: true }, Room: d.Room, Reply: shared.ResponseMD{Status: true}}}
+	//create live update object
+	rmUpdate := &RoomUpdate{RoomUpdate: &shared.RoomUpdate{Create: false, Room: d.Room}}
 	//send to all users in the room
 	for name, user := range s.rooms[d.Room].users {
 		//remove user from room state
@@ -440,6 +457,8 @@ func (d *DeleteCmd) ExecuteServer() {
 		}
 		//notify they are no longer in that room
 		user.RecvServer <- force
+		//update user GUI
+		user.RecvServer <- rmUpdate
 	}
 
 	//remove room from server state
@@ -497,15 +516,17 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 	}
 	var action, newrole string
 	var role Role
+	update := &UserUpdate{UserUpdate: &shared.UserUpdate{Rooms: make([]string, 0)}}
 	if p.Promote {
 		action = "promoted"
 		newrole = "to admin"
 		role = RoleAdmin
+		update.Promote = true
 	} else {
 		action = "demoted"
 		newrole = "to member"
 		role = RoleMember
-
+		update.Promote = false
 		//if member is currently in a staff only room, kick them out
 		if s.users[p.User].CurrentRoom != "" && s.rooms[s.users[p.User].CurrentRoom].permission > RoleMember {
 			force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: p.Timestamp, UserName: p.User, Flag: true }, Room: s.users[p.User].CurrentRoom, Reply: shared.ResponseMD{Status: true}}}
@@ -513,9 +534,11 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 			remove(p.User, s.users[p.User].CurrentRoom)
 		}
 	}
-
 	//promote member to admin
-	s.users[p.User].updateUserState(role)
+	s.users[p.User].updateUserState(role, update)
+
+	//update user's GUI state
+	s.users[p.User].RecvServer <- update
 
 	//notify staff
 	msg := formatStaffMsg(p.UserName, action + " " + p.User + " " + newrole, p.Timestamp)
@@ -610,6 +633,20 @@ func (lr *ListRoomsCmd) ExecuteServer() {
 }
 func (lr *ListRoomsCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+//stubs for updating a room upon creation/deletion -> mainly used by GUI and create/delete cmds
+type RoomUpdate struct {
+	*shared.RoomUpdate
+}
+func (ru *RoomUpdate) ExecuteServer() {}
+func (ru *RoomUpdate) ExecuteClient(ui shared.ClientUI) {}
+
+//stubs for updating a user's state upon promotion/demotion -> used internally not for cmds
+type UserUpdate struct {
+	*shared.UserUpdate
+}
+func (u *UserUpdate) ExecuteServer() {}
+func (u *UserUpdate) ExecuteClient(ui shared.ClientUI) {}
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {

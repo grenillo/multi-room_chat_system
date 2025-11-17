@@ -18,6 +18,8 @@ type ClientUI interface {
 	SetRooms(newRooms []string)
 	AddRoom(room string)
 	RemoveRoom(room string)
+	ShowLobby()
+	UserQuit(msg string)
 }
 
 func Init() {
@@ -35,6 +37,8 @@ func Init() {
 	gob.Register(&BroadcastCmd{})
 	gob.Register(&ShutdownCmd{})
 	gob.Register(&ListRoomsCmd{})
+	gob.Register(&RoomUpdate{})
+	gob.Register(&UserUpdate{})
 }
 
 type MsgMetadata struct {
@@ -140,4 +144,14 @@ type ShutdownCmd struct {
 type ListRoomsCmd struct {
 	MsgMetadata
 	LUResp
+}
+
+type RoomUpdate struct {
+	Create bool
+	Room string
+}
+
+type UserUpdate struct {
+	Promote bool
+	Rooms []string
 }

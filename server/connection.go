@@ -166,6 +166,10 @@ func unwrapShared(msg interface{}) interface{} {
 		return m.ShutdownCmd
 	case *ListRoomsCmd:
 		return m.ListRoomsCmd
+	case *RoomUpdate:
+		return m.RoomUpdate
+	case *UserUpdate:
+		return m.UserUpdate
     default:
         panic("error during unwrapping: unknown command type")
     }

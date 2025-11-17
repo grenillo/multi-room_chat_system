@@ -102,7 +102,7 @@ func outputFromServer(conn net.Conn, term chan struct{}) {
 }
 */
 
-func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage{
+func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage {
 	//create new message to return
 	var msg interface{}
 	err := decoder.Decode(&msg)
@@ -133,6 +133,7 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 	case *shared.Message:
 		return &Message{Message: m}
 	case *shared.QuitCmd:
+		log.Println(&QuitCmd{QuitCmd: m}.Content)
 		return &QuitCmd{QuitCmd: m}
 	case *shared.KickBanCmd:
 		return &KickBanCmd{KickBanCmd: m}
@@ -148,6 +149,10 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 		return &ShutdownCmd{ShutdownCmd: m}
 	case *shared.ListRoomsCmd:
 		return &ListRoomsCmd{ListRoomsCmd: m}
+	case *shared.RoomUpdate:
+		return &RoomUpdate{RoomUpdate: m}
+	case *shared.UserUpdate:
+		return &UserUpdate{UserUpdate: m}
     default:
         panic("error during wrapping: unknown shared type")
     }

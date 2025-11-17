@@ -284,8 +284,8 @@ func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {
 	ui.DeselectRoom()
 	ui.ClearRoom(l.Room)
 	ui.ClearLobby()
-	ui.Display(l.Reply.CurrentRoom, "======= LEFT ROOM " + l.Room + " =======")
-	//fmt.Println("=======LEFT ROOM ", l.Room,"=======")	
+	ui.ShowLobby()
+	ui.Display("", "======= LEFT ROOM " + l.Room + " =======")
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -298,6 +298,7 @@ func (lu *ListUsersCmd) ExecuteServer() {}
 func (lu *ListUsersCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !lu.Reply.Status {
 		//fmt.Println(lu.Reply.ErrMsg)
+		log.Println("current room:", lu.Reply.CurrentRoom)
 		ui.Display(lu.Reply.CurrentRoom, lu.Reply.ErrMsg)
 		return
 	}
@@ -335,9 +336,7 @@ type QuitCmd struct {
 //user will always be able to quit
 func (q *QuitCmd) ExecuteServer() {}
 func (q *QuitCmd) ExecuteClient(ui shared.ClientUI)() {
-	//ClearScreen()
-	ui.Display(q.CurrentRoom, "====================== GOODBYE ======================")
-	//fmt.Println("====================== GOODBYE ======================")
+	ui.UserQuit("You have been disconnected from the server")
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -371,6 +370,10 @@ func (c *CreateCmd) ExecuteServer() {}
 func (c *CreateCmd) ExecuteClient(ui shared.ClientUI)() {
 	//fmt.Println(c.ErrMsg)
 	ui.Display(c.CurrentRoom, c.ErrMsg)
+	//if successful, update GUI
+	if c.Status {
+		ui.AddRoom(c.Room)
+	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -383,10 +386,16 @@ func (d *DeleteCmd) ExecuteServer() {}
 func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {
 	if d.InRoom {
 		//ClearScreen()
-		//fmt.Println("======= LEFT ROOM ", d.Room,"=======")	
+		//fmt.Println("======= LEFT ROOM ", d.Room,"=======")
+		ui.ClearRoom(d.Room)
+		ui.DeselectRoom()
 		ui.Display(d.CurrentRoom, "======= LEFT ROOM " + d.Room + " =======")
 	}
 	ui.Display(d.CurrentRoom, d.ErrMsg)
+	//if successful, update GUI
+	if d.Status {
+		ui.RemoveRoom(d.Room)
+	}
 	//fmt.Println(d.ErrMsg)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -441,6 +450,34 @@ func (lr *ListRoomsCmd) ExecuteClient(ui shared.ClientUI)() {
 	ui.Display(lr.CurrentRoom, "===================================================")
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+type RoomUpdate struct {
+	*shared.RoomUpdate
+}
+func (ru *RoomUpdate) ExecuteServer() {}
+func (ru *RoomUpdate) ExecuteClient(ui shared.ClientUI) {
+	//update user interface
+	if ru.Create {
+		ui.AddRoom(ru.Room)
+	} else {
+		ui.RemoveRoom(ru.Room)
+	}
+}
+
+type UserUpdate struct {
+	*shared.UserUpdate
+}
+func (u *UserUpdate) ExecuteServer() {}
+func (u *UserUpdate) ExecuteClient(ui shared.ClientUI) {
+	//update user interface
+	for _, room := range u.Rooms {
+		if u.Promote {
+			ui.AddRoom(room)
+		} else {
+			ui.RemoveRoom(room)
+		}
+	}
+}
 
 
 func ClearScreen() {

@@ -74,6 +74,10 @@ func (c * ClientAdapter) readLoop() {
             return
         default:
             msg := recvExecutableMsg(c.Term, c.Decoder)
+			if msg == nil {
+				log.Println("client was terminated, do not forward nil to GUI")
+				continue
+			}
 			log.Println("client received wrapped type")
             //err := c.Decoder.Decode(&msg)
 			log.Println("Decoded message:", msg)

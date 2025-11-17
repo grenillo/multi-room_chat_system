@@ -15,6 +15,7 @@ import (
 var loginWin fyne.Window
 
 type GUI struct {
+	quitting 	bool
     roomBoxes   map[string]*fyne.Container
     chatScrolls map[string]*container.Scroll
 	lobbyBox 	*fyne.Container
@@ -30,6 +31,9 @@ type GUI struct {
 
 
 func (g *GUI) Display(room string, text string) {
+	if g.quitting {
+		return
+	}
     var box *fyne.Container
     var scroll *container.Scroll
 
@@ -71,7 +75,7 @@ func (g *GUI) ClearRoom(room string) {
 }
 
 func (g *GUI) ClearLobby() {
-    g.lobbyBox.Objects = nil
+	g.lobbyBox.RemoveAll()
     g.lobbyBox.Refresh()
     g.lobbyScroll.Refresh()
 }
@@ -132,6 +136,44 @@ func (g *GUI) RemoveRoom(room string) {
     g.listView.Refresh()
 }
 
+func (g *GUI) ShowLobby() {
+    rightSide := container.NewBorder(nil, g.bottomBar, nil, nil, g.lobbyScroll)
+    split := container.NewHSplit(g.listView, rightSide)
+    split.Offset = 0.2
+    g.window.SetContent(split)
+}
+
+func (g *GUI) UserQuit(msg string) {
+    g.quitting = true
+    //close the main chat window
+    g.window.Close()
+    //create a new window just for the quit message
+    newWin := fyne.CurrentApp().NewWindow("Session Ended")
+    //message label
+    label := widget.NewLabel(msg)
+    label.Alignment = fyne.TextAlignCenter
+
+    //close button
+    closeBtn := widget.NewButton("Close", func() {
+        //close window and quit app when clicked
+        newWin.Close()
+        fyne.CurrentApp().Quit()
+    })
+    //stack label and button vertically
+    vbox := container.NewVBox(
+        label,
+        closeBtn,
+    )
+    //center the whole block in the window
+    content := container.NewCenter(vbox)
+    
+    newWin.SetContent(content)
+    newWin.Resize(fyne.NewSize(400, 200))
+    newWin.Show()
+}
+
+
+
 // callback will be used to start the actual chat window
 func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Window {
     loginWin := a.NewWindow("Login")
@@ -166,7 +208,6 @@ func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Win
 
 func TestWindow() {
     a := app.New()
-
     loginWin = showLoginWindow(a, func(username string) {
         go func() {
             adapter, msg, err := ConnectToServer(username)
@@ -235,10 +276,6 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
 	gui.lobbyBox = container.NewVBox()
 	gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
 	gui.lobbyScroll.SetMinSize(fyne.NewSize(600, 400))
-	//set initial rooms for the user
-	//gui.SetRooms(rooms)
-	
-
 
     // --------------------------
     // BOTTOM: Input bar
@@ -271,20 +308,25 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
     // LEFT: Room List
     // --------------------------
     listView := widget.NewList(
-        func() int { return len(rooms) },
+        func() int { return len(gui.rooms) },
         func() fyne.CanvasObject { return widget.NewLabel("") },
         func(id widget.ListItemID, obj fyne.CanvasObject) {
-            obj.(*widget.Label).SetText(rooms[id])
+            obj.(*widget.Label).SetText(gui.rooms[id])
         },
     )
 	gui.listView = listView
 	gui.rooms = rooms
     listView.OnSelected = func(id widget.ListItemID) {
 		gui.selectedID = id
-		gui.currentRoom = rooms[id] // <-- set the active room
+		selected := gui.rooms[id]
 		//functionality to make clicking on a room function as a join request
-		req := "/join " + gui.currentRoom
-		adapter.Outgoing <- req
+		//only send /join if not already in this room
+    if gui.currentRoom != selected && selected != "" {
+        req := "/join " + selected
+        adapter.Outgoing <- req
+    }
+		
+		gui.currentRoom = gui.rooms[id] // <-- set the active room
 
 		var rightSide *fyne.Container
 		if gui.currentRoom == "" {

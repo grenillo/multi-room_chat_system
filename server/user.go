@@ -136,9 +136,13 @@ func getRooms(role Role) []string {
 	return rooms
 }
 
-func (m *Member) updateUserState(role Role) {
+func (m *Member) updateUserState(role Role, update *UserUpdate) {
 	//get available rooms based on role
-	m.AvailableRooms = getRooms(role)
+	newSet := getRooms(role)
+	//get set of new rooms
+	update.Rooms = getRoomChanges(newSet, m.AvailableRooms)
+	//update available rooms
+	m.AvailableRooms = newSet
 	//set cmds
 	var cmds []string
 	if role >= RoleMember {
@@ -153,4 +157,28 @@ func (m *Member) updateUserState(role Role) {
 	//update permissions
 	m.Permissions = cmds
 	m.Role = role
+}
+
+func difference(a, b []string) []string {
+    //build a lookup map for b
+    m := make(map[string]struct{}, len(b))
+    for _, x := range b {
+        m[x] = struct{}{}
+    }
+
+    //collect items from a not in b
+    var diff []string
+    for _, x := range a {
+        if _, found := m[x]; !found {
+            diff = append(diff, x)
+        }
+    }
+    return diff
+}
+
+//helper functions 
+func getRoomChanges(a, b []string) []string {
+    diffAB := difference(a, b) // removed
+    diffBA := difference(b, a) // added
+    return append(diffAB, diffBA...)
 }
