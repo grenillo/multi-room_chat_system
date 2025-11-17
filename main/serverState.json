@@ -4,6 +4,10 @@
    "Username": "admin",
    "Role": 2
   },
+  "banned": {
+   "Username": "banned",
+   "Role": 0
+  },
   "owner": {
    "Username": "owner",
    "Role": 3
@@ -11,10 +15,6 @@
   "user": {
    "Username": "user",
    "Role": 1
-  },
-  "banned": {
-   "Username": "banned",
-   "Role": 0
   }
  },
  "Rooms": {

@@ -434,7 +434,6 @@ func (b* BroadcastCmd) ExecuteClient(ui shared.ClientUI)() {
 	//check if message was sent
 	if !b.Status {
 		ui.Display(b.CurrentRoom, b.ErrMsg)
-		//fmt.Println(b.ErrMsg)
 		return
 	}
 	//otherwise, print to our client's local terminal
@@ -448,8 +447,14 @@ type ShutdownCmd struct {
 }
 func (s *ShutdownCmd) ExecuteServer() {}
 func (s *ShutdownCmd) ExecuteClient(ui shared.ClientUI)() {
-	//fmt.Println(s.ErrMsg)
-	ui.Display(s.CurrentRoom, s.ErrMsg)
+	if !s.Status {
+		ui.Display(s.CurrentRoom, s.ErrMsg)
+		return
+	}
+	if s.Sender {
+		ui.Display(s.CurrentRoom, s.ErrMsg)
+	}
+	ui.UserQuit("SERVER IS NOW OFFLINE - You have been disconnected from the server")
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

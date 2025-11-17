@@ -115,15 +115,6 @@ func (j *JoinCmd) ExecuteServer() {
 		j.Reply.ErrMsg = "PERMISSION DENIED: Room does not exist"
 		return
 	}
-	//check that the user can join this room
-	result = contains(s.users[j.UserName].AvailableRooms, j.Room)
-	//if room DNE, set status to false and return
-	if !result {
-		j.Reply.CurrentRoom = s.users[j.UserName].CurrentRoom
-		j.Reply.Status = false
-		j.Reply.ErrMsg = "PERMISSION DENIED: Join room request failed"
-		return
-	}
 	//check if the user is already in this room
 	log.Println("currRoom:", s.users[j.UserName].CurrentRoom)
 	log.Println("jRoom:", j.Room)
@@ -459,6 +450,7 @@ func (c *CreateCmd) ExecuteServer() {
 			
 		}
 	}
+	broadcastToStaff(formatStaffMsg(c.UserName, "created room " + c.Room, c.Timestamp))
 	c.Status = true
 	c.ErrMsg = "SERVER: room " + c.Room + " was successfully created"
 }
@@ -519,8 +511,7 @@ func (d *DeleteCmd) ExecuteServer() {
 	delete(s.rooms, d.Room)
 
 	//notify all staff
-	msg := formatStaffMsg(d.UserName, "Deleted " + d.Room, d.Timestamp)
-	broadcastToStaff(msg)
+	broadcastToStaff(formatStaffMsg(d.UserName, "deleted room " + d.Room, d.Timestamp))
 
 	d.ErrMsg = "SERVER: Sucessfully deleted " + d.Room
 	d.Status = true
@@ -633,9 +624,13 @@ func (b* BroadcastCmd) ExecuteServer() {
 		if username == b.UserName || !user.Active {
 			continue
 		}
+		bc := *b.BroadcastCmd // copy the underlying struct
+		cmd := &BroadcastCmd{BroadcastCmd: &bc}
+		cmd.CurrentRoom = user.CurrentRoom
 		//otherwise, send to the user
-		user.RecvServer <- b
+		user.RecvServer <- cmd
 	}
+	b.CurrentRoom = s.users[b.UserName].CurrentRoom
 }
 func (b* BroadcastCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -661,8 +656,18 @@ func (sh *ShutdownCmd) ExecuteServer() {
 		return
 	}
 	sh.Status = true
+	sh.Sender = true
 	sh.ErrMsg = "SERVER: Shutdown was successful"
 	s.shutdownReq = true
+	for name, user := range s.users {
+		if !user.Active || name == sh.UserName {
+			continue
+		}
+		//send final shutdown to client so their GUI shuts down
+		shutdown := &ShutdownCmd{ShutdownCmd: &shared.ShutdownCmd{Sender: false}}
+		shutdown.Status = true
+		user.RecvServer <- shutdown
+	}
 }
 func (sh *ShutdownCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -770,8 +775,10 @@ func broadcastToStaff(msg *Message) {
 		}
 		log.Println(user.Role)
 		if user.Role >= RoleAdmin && user.Active{
-			msg.Response.CurrentRoom = user.CurrentRoom
-			user.RecvServer <- msg
+			m := *msg.Message
+			message := &Message{Message: &m}
+			message.Response.CurrentRoom = user.CurrentRoom
+			user.RecvServer <- message
 		}
 	}
 }

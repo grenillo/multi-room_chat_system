@@ -149,6 +149,7 @@ type BroadcastCmd struct {
 type ShutdownCmd struct {
 	MsgMetadata
 	ResponseMD
+	Sender bool
 }
 
 type ListRoomsCmd struct {
