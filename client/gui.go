@@ -2,7 +2,10 @@ package client
 
 import (
 	//"fmt"
+	//"image/color"
 	"log"
+	"net/url"
+	"regexp"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -32,6 +35,8 @@ type GUI struct {
 	selectedID  widget.ListItemID
 }
 
+//regex to detect URLs
+var urlRegex = regexp.MustCompile(`https?://[^\s]+`)
 
 func (g *GUI) Display(room string, text string) {
 	if g.quitting {
@@ -56,11 +61,34 @@ func (g *GUI) Display(room string, text string) {
         box = g.roomBoxes[room]
         scroll = g.chatScrolls[room]
     }
+     // Detect if text contains a URL
+    if urlRegex.MatchString(text) {
+        linkStr := urlRegex.FindString(text)
+        parsed, err := url.Parse(linkStr)
+        if err == nil {
+            //parse header
+            parts := strings.SplitN(text, ": ", 2)
+            //header := canvas.NewText(" " + parts[0] + ":", color.White)
+            hyperlink := widget.NewHyperlink(parts[1], parsed)
+            hyperlink.Wrapping = fyne.TextWrapOff
+            //content := container.NewHBox(header, hyperlink)
+            rt := widget.NewRichText(
+                &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true}},
+                &widget.HyperlinkSegment{Text: parts[1], URL: parsed, Alignment: fyne.TextAlignLeading},
+            )
+            
+            rt.Wrapping = fyne.TextWrapWord
+            box.Add(rt)
+        } else {
+            box.Add(widget.NewLabel(text)) // fallback
+        }
+    } else {
+        label := widget.NewLabel(text)
+        label.Wrapping = fyne.TextWrapWord
+        box.Add(label)
+    }
 
-    // Just append the message
-    label := widget.NewLabel(text)
-    label.Wrapping = fyne.TextWrapWord
-    box.Add(label)
+
     box.Refresh()
     scroll.ScrollToBottom()
 }

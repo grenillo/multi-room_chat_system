@@ -16,10 +16,10 @@ func ExtractUUIDFromLink(link string) (string, string, error) {
         return "", "", err
     }
 
-    // Get the last segment of the path (uuid + extension)
-    filename := path.Base(u.Path) // e.g. "550e8400-e29b-41d4-a716-446655440000.png"
+    //get the last segment of the path (uuid + extension)
+    filename := path.Base(u.Path)
 
-    // Split into uuid and extension
+    //split into uuid and extension
     parts := strings.SplitN(filename, ".", 2)
     if len(parts) != 2 {
         return "", "", fmt.Errorf("invalid filename format")
@@ -64,7 +64,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
     defer out.Close()
 
-    //io.Copy(out, file)
 	_, err = io.Copy(out, file)
 	if err != nil {
 		fmt.Println("Error writing file:", err)
