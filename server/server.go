@@ -1,8 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"multi-room_chat_system/shared"
+	"net/http"
+	"os"
 	"sync"
 	"time"
 )
@@ -20,6 +23,7 @@ type ServerState struct {
 	//config *Config
 	//server dispatcher
 	//dispatcher *Dispatcher
+	fileServer *http.Server
 
 	//channels to receive/respond user joins 
 	recvUser chan ServerJoinRequest
@@ -54,6 +58,9 @@ func GetServerState() *ServerState {
 func initServer() {
 	shared.Init()
 	log.Println("Starting server")
+	if err := os.MkdirAll("uploads", 0755); err != nil {
+		log.Fatal("Could not create uploads dir:", err)
+	}
 	instance = &ServerState{
 		shutdownReq: false,
 		users: map[string]*Member{},
@@ -76,7 +83,9 @@ func initServer() {
 	//create initial rooms
 	//instance.createRoom("#general", RoleMember)
 	//instance.createRoom("#staff", RoleAdmin)
+	instance.fileServer = startFileServer()
 	instance.LoadFromDisk()
+	
 
 	//start goroutine to run server
 	go instance.run()	
@@ -162,6 +171,7 @@ func(s *ServerState) run() {
 			}
 		case <-s.term:
 			log.Println("SERVER: terminated, returning")
+			s.fileServer.Close()
 			return
 		}
 	}
@@ -197,4 +207,28 @@ func getJoinableRooms(user *Member) string {
 	}
 	temp += ">"
 	return temp 
+}
+
+func startFileServer() *http.Server {
+    mux := http.NewServeMux()
+
+    // Serve static files from ./uploads
+    fs := http.FileServer(http.Dir("./uploads"))
+    mux.Handle("/uploads/", http.StripPrefix("/uploads/", fs))
+
+	mux.HandleFunc("/upload", uploadHandler)
+
+    srv := &http.Server{
+        Addr:    ":8080",
+        Handler: mux,
+    }
+
+    go func() {
+        fmt.Println("HTTP file server running at http://localhost:8080/uploads/")
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            fmt.Println("File server error:", err)
+        }
+    }()
+
+    return srv
 }

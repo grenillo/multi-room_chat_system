@@ -7,9 +7,12 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 )
 
 var loginWin fyne.Window
@@ -60,6 +63,35 @@ func (g *GUI) Display(room string, text string) {
     box.Add(label)
     box.Refresh()
     scroll.ScrollToBottom()
+}
+
+func (g *GUI) DisplayImage(room string, url string) {
+    box, ok := g.roomBoxes[room]
+    if !ok {
+        box = container.NewVBox()
+        g.roomBoxes[room] = box
+        g.chatScrolls[room] = container.NewVScroll(box)
+    }
+
+    // Ensure the URL is valid
+    uri := storage.NewURI(url)
+    if uri == nil {
+        log.Println("Invalid URI for image:", url)
+        box.Add(widget.NewLabel("Could not load image: " + url))
+        box.Refresh()
+        return
+    }
+
+    img := canvas.NewImageFromURI(uri)
+    img.FillMode = canvas.ImageFillContain
+    img.SetMinSize(fyne.NewSize(200, 200))
+
+    box.Add(img)
+    box.Refresh()
+    if scroll, ok := g.chatScrolls[room]; ok {
+        scroll.Refresh()
+        scroll.ScrollToBottom()
+    }
 }
 
 
@@ -207,7 +239,8 @@ func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Win
 
 
 func TestWindow() {
-    a := app.New()
+    //a := app.New()
+    a := app.NewWithID("com.jonny.chatapp")
     loginWin = showLoginWindow(a, func(username string) {
         go func() {
             adapter, msg, err := ConnectToServer(username)
@@ -283,6 +316,34 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
     input := widget.NewEntry()
     input.SetPlaceHolder("Type a message...")
 
+    //upload file button
+    uploadBtn := widget.NewButton("Upload", func() {
+        dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
+            if err != nil || reader == nil {
+                return
+            }
+            defer reader.Close()
+
+            filePath := reader.URI().Path()
+
+            go func() {
+                //uploadedURL, uuid := GenerateImageLink("localhost:8080/uploads", filePath)
+                uuid := uuid.New().String()
+                url, err := UploadImageToServer("http://localhost:8080", uuid, filePath)
+                if err != nil {
+                    log.Println("upload error:", err)
+                    return
+                }
+                log.Println("path:", filePath)
+                log.Println("url", url)
+
+                // Send the hosted URL as a chat message
+                adapter.Outgoing <- "img:" + url
+            }()
+        }, mainWin)
+    })
+
+
     sendBtn := widget.NewButton("Send", func() {
         text := input.Text
         if text != "" {
@@ -301,7 +362,7 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
     })
     input.OnSubmitted = func(text string) { sendBtn.OnTapped() }
 
-    bottomBar := container.NewBorder(nil, nil, nil, sendBtn, input)
+    bottomBar := container.NewBorder(nil, nil, uploadBtn, sendBtn, input)
 	gui.bottomBar = bottomBar
 
     // --------------------------

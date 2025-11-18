@@ -25,6 +25,7 @@ type PersistMessage struct {
 	Username string
 	Timestamp time.Time
 	Content string
+	Image bool
 }
 
 type PersistState struct {
@@ -45,7 +46,7 @@ func (s *ServerState) SaveToDisk() error {
 		//loop through the room's current log
 		for _, msg := range room.log {
 			//convery to persistent message type
-			roomInfo.Log = append(roomInfo.Log, PersistMessage{Username: msg.UserName, Timestamp: msg.Timestamp, Content: msg.Content})
+			roomInfo.Log = append(roomInfo.Log, PersistMessage{Username: msg.UserName, Timestamp: msg.Timestamp, Content: msg.Content, Image: msg.Image})
 		}
 		//save information to persistent state
 		p.Rooms[name] = roomInfo
@@ -81,7 +82,7 @@ func (s *ServerState) LoadFromDisk() error {
 		r := &Room{users: make(map[string]*Member), log: make([]shared.Message, 0), permission: room.Permission}
 		//rebuild room's log
 		for _, msg := range room.Log {
-			r.log = append(r.log, shared.Message{MsgMetadata: shared.MsgMetadata{UserName: msg.Username, Timestamp: msg.Timestamp, Content: msg.Content}})
+			r.log = append(r.log, shared.Message{MsgMetadata: shared.MsgMetadata{UserName: msg.Username, Timestamp: msg.Timestamp, Content: msg.Content}, Image: msg.Image})
 		}
 		//add room back to server state
 		s.rooms[name] = r

@@ -25,39 +25,88 @@
     {
      "Username": "user",
      "Timestamp": "2025-11-13T18:57:48.186973-05:00",
-     "Content": " joined #general"
+     "Content": " joined #general",
+     "Image": false
     },
     {
      "Username": "owner",
      "Timestamp": "2025-11-13T18:57:53.76045-05:00",
-     "Content": " joined #general"
+     "Content": " joined #general",
+     "Image": false
     },
     {
      "Username": "owner",
      "Timestamp": "2025-11-13T18:57:58.363134-05:00",
-     "Content": "hi user!"
+     "Content": "hi user!",
+     "Image": false
     },
     {
      "Username": "user",
      "Timestamp": "2025-11-13T18:58:02.154469-05:00",
-     "Content": "hi owner!"
+     "Content": "hi owner!",
+     "Image": false
     },
     {
      "Username": "user",
      "Timestamp": "2025-11-13T18:58:10.413312-05:00",
-     "Content": " left #general"
+     "Content": " left #general",
+     "Image": false
     },
     {
      "Username": "owner",
      "Timestamp": "2025-11-13T19:21:31.453691-05:00",
-     "Content": " joined #general"
+     "Content": " joined #general",
+     "Image": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-17T22:25:08.562258-05:00",
+     "Content": " joined #general",
+     "Image": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-17T22:25:35.581036-05:00",
+     "Content": "http://localhost:8080/uploads/bfe96fc7-14c4-40c3-a28f-5fd5bbcd90f6.jpg",
+     "Image": true
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-11-17T22:25:55.132979-05:00",
+     "Content": " joined #general",
+     "Image": false
     }
    ]
   },
   "#staff": {
    "Name": "#staff",
    "Permission": 2,
-   "Log": []
+   "Log": [
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-17T22:25:06.681023-05:00",
+     "Content": " joined #staff",
+     "Image": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-11-17T22:25:08.562258-05:00",
+     "Content": " left #staff",
+     "Image": false
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-11-17T22:25:51.237602-05:00",
+     "Content": " joined #staff",
+     "Image": false
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-11-17T22:25:55.132979-05:00",
+     "Content": " left #staff",
+     "Image": false
+    }
+   ]
   }
  }
 }

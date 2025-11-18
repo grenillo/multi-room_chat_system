@@ -20,6 +20,7 @@ type ClientUI interface {
 	RemoveRoom(room string)
 	ShowLobby()
 	UserQuit(msg string)
+	DisplayImage(room string, url string)
 }
 
 func Init() {
@@ -40,7 +41,6 @@ func Init() {
 	gob.Register(&RoomUpdate{})
 	gob.Register(&UserUpdate{})
 	gob.Register(&UnBanCmd{})
-	gob.Register(&ImageMsg{})
 }
 
 type MsgMetadata struct {
@@ -61,6 +61,8 @@ type ResponseMD struct {
 type Message struct {
 	MsgMetadata
 	Response ResponseMD
+	Image bool
+	URL bool
 }
 
 type JoinCmd struct {
@@ -166,11 +168,4 @@ type RoomUpdate struct {
 type UserUpdate struct {
 	Promote bool
 	Rooms []string
-}
-
-type ImageMsg struct {
-	MsgMetadata
-	ResponseMD
-	File bool
-	Path string
 }

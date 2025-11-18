@@ -243,6 +243,11 @@ func (m *Message) ExecuteClient(ui shared.ClientUI)() {
 	}
 	log.Println("client received:", m.Message.Content)
 	log.Println(m.Response.CurrentRoom)
+	if m.Image {
+		ui.Display(m.Response.CurrentRoom, formatImgMetadata(m.MsgMetadata))
+		ui.DisplayImage(m.Response.CurrentRoom, m.Content)
+		return
+	}
 	ui.Display(m.Response.CurrentRoom, formatMessage(false, m.Message, nil))
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -263,6 +268,11 @@ func (j *JoinCmd) ExecuteClient(ui shared.ClientUI)() {
 	ui.Display(j.Reply.CurrentRoom, "======= JOINED ROOM " + j.Room + " =======")
 	//print out entire message history to client
 	for _, msg := range j.Reply.Log {
+		if msg.Image {
+			ui.Display(j.Reply.CurrentRoom, formatImgMetadata(msg.MsgMetadata))
+			ui.DisplayImage(j.Reply.CurrentRoom, msg.Content)
+			continue
+		}
 		ui.Display(j.Reply.CurrentRoom, formatMessage(false, &msg, nil))
 		//fmt.Println(formatMessage(false, &msg, nil))
 	}
@@ -501,6 +511,11 @@ func (u *UserUpdate) ExecuteClient(ui shared.ClientUI) {
 
 func ClearScreen() {
     fmt.Print("\033[2J\033[H\n")
+}
+
+func formatImgMetadata(data shared.MsgMetadata) string {
+	time := data.Timestamp.Format("2006-01-02 15:04:05")
+	return time + "\t" + data.UserName + ":"
 }
 
 func formatMessage(broadcast bool, m *shared.Message, b *shared.BroadcastCmd) string {

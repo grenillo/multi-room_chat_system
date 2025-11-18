@@ -3,6 +3,9 @@ package server
 import (
 	"log"
 	"multi-room_chat_system/shared"
+	"net/http"
+	"net/url"
+
 	//"runtime/trace"
 	"strings"
 	"time"
@@ -16,10 +19,48 @@ func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableM
 	//send to command factory
 	if input.Content[0] == '/' {
 		return CommandFactory(input, s)
+	} else if (strings.HasPrefix(input.Content, "img:")){ //look for image prefix 
+		return ImageFactory(input, s)
+	} else {
+		//otherwise return message
+	return &Message{Message: &shared.Message{MsgMetadata: input, Image: false, URL: false}}
 	}
-	//otherwise return message
-	return &Message{Message: &shared.Message{MsgMetadata: input}}
 }
+
+func ImageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
+    content := strings.TrimSpace(input.Content)
+    //trim "img:" prefix
+    if strings.HasPrefix(content, "img:") {
+        content = strings.TrimPrefix(content, "img:")
+    }
+    input.Content = content
+
+    msg := &Message{Message: &shared.Message{MsgMetadata: input}}
+	//default url and image to false before examining link -> allows us to handle non-image links
+	msg.URL = false
+	msg.Image = false
+    //if the client already uploaded or provided a URL, just mark it
+	if isURL(content) {
+		log.Println("is a url")
+		msg.URL = true
+		if isImageURL(content) {
+			log.Println("is an image url")
+			msg.Image = true
+			//extract UUID + extension
+			uuid, ext, err := ExtractUUIDFromLink(msg.Content)
+			if err != nil {
+				panic(err)
+			}
+
+			//rebuild usable link for Content
+			baseURL := "http://localhost:8080"
+			usableLink := MakeImageLink(baseURL, uuid, ext)
+			msg.Content = usableLink
+		}
+	}
+    return msg
+}
+
 
 func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	parts := strings.Fields(input.Content)
@@ -799,4 +840,27 @@ func convToRole(input string) Role {
 	} else {
 		return RoleBanned //use to indicate the input was incorrect
 	}
+}
+
+func isURL(s string) bool {
+    u, err := url.Parse(s)
+    return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+func isImagePath(path string) bool {
+    lower := strings.ToLower(path)
+    return strings.HasSuffix(lower, ".png") ||
+           strings.HasSuffix(lower, ".jpg") ||
+           strings.HasSuffix(lower, ".jpeg") ||
+           strings.HasSuffix(lower, ".gif")
+}
+
+func isImageURL(link string) bool {
+    resp, err := http.Head(link)
+    if err != nil {
+        return false
+    }
+    defer resp.Body.Close()
+    contentType := resp.Header.Get("Content-Type")
+    return strings.HasPrefix(contentType, "image/")
 }
