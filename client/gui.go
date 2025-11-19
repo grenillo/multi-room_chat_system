@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	//"image/color"
 	"log"
+	"multi-room_chat_system/shared"
 	"net/url"
 	"regexp"
 	"strings"
@@ -61,7 +62,24 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
         box = g.roomBoxes[room]
         scroll = g.chatScrolls[room]
     }
-     // Detect if text contains a URL
+    /*
+    //detect if broadcast
+    if broadcast {
+        // special styling for broadcasts
+        broadcastMsg := widget.NewRichText(
+            &widget.TextSegment{
+                Text:  text,
+                Style: widget.RichTextStyle{
+                    Inline:    true,
+                    TextStyle: fyne.TextStyle{Bold: true},
+                    ColorName: fyne.ThemeColorName("red"),
+                },
+            },
+        )
+        box.Add(broadcastMsg)
+    }
+    */
+    //detect if text contains a URL
     if urlRegex.MatchString(text) {
         linkStr := urlRegex.FindString(text)
         parsed, err := url.Parse(linkStr)
@@ -72,8 +90,14 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
             hyperlink := widget.NewHyperlink(parts[1], parsed)
             hyperlink.Wrapping = fyne.TextWrapOff
             //content := container.NewHBox(header, hyperlink)
+            //color := "white"
+            bold := false
+            if broadcast {
+              //  color = "red"
+                bold = true
+            }
             rt := widget.NewRichText(
-                &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true}},
+                &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true, TextStyle: fyne.TextStyle{Bold: bold}}},
                 &widget.HyperlinkSegment{Text: parts[1], URL: parsed, Alignment: fyne.TextAlignLeading},
             )
             
@@ -92,6 +116,122 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
     box.Refresh()
     scroll.ScrollToBottom()
 }
+
+func (g *GUI) DisplayJoin(room string, messages []shared.Message) {
+    if g.quitting {
+        return
+    }
+
+    box, scroll := g.ensureRoom(room)
+
+    for _, msg := range messages {
+        if msg.Image {
+            uri := storage.NewURI(msg.Content)
+            if uri == nil {
+                box.Add(widget.NewLabel("Could not load image: " + msg.Content))
+                continue
+            }
+            //add image metadata
+            lbl := widget.NewLabel(formatImgMetadata(msg.MsgMetadata))
+            lbl.Wrapping = fyne.TextWrapWord
+            box.Add(lbl)
+
+            //placeholder first
+            placeholder := widget.NewLabel("[loading image]")
+            box.Add(placeholder)
+
+            //async load of the image
+            go func(uri fyne.URI, ph *widget.Label, box *fyne.Container, scroll *container.Scroll) {
+                img := canvas.NewImageFromURI(uri)
+                img.FillMode = canvas.ImageFillContain
+                img.SetMinSize(fyne.NewSize(200, 200))
+
+                //replace placeholder with image
+                idx := -1
+                for i, o := range box.Objects {
+                    if o == ph {
+                        idx = i
+                        break
+                    }
+                }
+                if idx >= 0 {
+                    box.Objects[idx] = img
+                } else {
+                    box.Add(img)
+                }
+                box.Refresh()
+                scroll.Refresh()
+                scroll.ScrollToBottom()
+            }(uri, placeholder, box, scroll)
+
+            continue
+        }
+
+        // Handle text
+        text := formatMessage(false, &msg, nil)
+
+        if urlRegex.MatchString(text) {
+            linkStr := urlRegex.FindString(text)
+            parsed, err := url.Parse(linkStr)
+            if err == nil {
+                parts := strings.SplitN(text, ": ", 2)
+                rt := widget.NewRichText(
+                    &widget.TextSegment{
+                        Text:  parts[0] + ": ",
+                        Style: widget.RichTextStyle{
+                            Inline: true,
+                            // you can set Bold or ColorName here if needed
+                        },
+                    },
+                    &widget.HyperlinkSegment{
+                        Text: parts[1],
+                        URL:  parsed,
+                        Alignment: fyne.TextAlignLeading,
+                    },
+                )
+                rt.Wrapping = fyne.TextWrapWord
+                box.Add(rt)
+                /*
+                prefix := widget.NewLabel(parts[0] + ": ")
+                link := widget.NewHyperlink(parts[1], parsed)
+                link.Wrapping = fyne.TextWrapOff
+                box.Add(container.NewHBox(prefix, link))
+                */
+            } else {
+                lbl := widget.NewLabel(text)
+                lbl.Wrapping = fyne.TextWrapWord
+                box.Add(lbl)
+            }
+        } else {
+            lbl := widget.NewLabel(text)
+            lbl.Wrapping = fyne.TextWrapWord
+            box.Add(lbl)
+        }
+    }
+
+    // Refresh once at the end
+    box.Refresh()
+    scroll.ScrollToBottom()
+}
+
+
+
+// Helper to ensure room containers exist
+func (g *GUI) ensureRoom(room string) (*fyne.Container, *container.Scroll) {
+    if room == "" {
+        return g.lobbyBox, g.lobbyScroll
+    }
+    b, ok := g.roomBoxes[room]
+    if !ok {
+        b = container.NewVBox()
+        s := container.NewVScroll(b)
+        s.SetMinSize(fyne.NewSize(600, 400))
+        g.roomBoxes[room] = b
+        g.chatScrolls[room] = s
+    }
+    return g.roomBoxes[room], g.chatScrolls[room]
+}
+
 
 func (g *GUI) DisplayImage(room string, url string) {
     box, ok := g.roomBoxes[room]
@@ -335,7 +475,9 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
 	}
 	//create lobby box
 	gui.lobbyBox = container.NewVBox()
-	gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
+    //gui.lobbyBox = container.NewStack()
+	//gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
+    gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
 	gui.lobbyScroll.SetMinSize(fyne.NewSize(600, 400))
 
     // --------------------------

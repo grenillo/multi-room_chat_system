@@ -21,6 +21,7 @@ type ClientUI interface {
 	ShowLobby()
 	UserQuit(msg string)
 	DisplayImage(room string, url string)
+	DisplayJoin(room string, Messages []Message)
 }
 
 func Init() {
