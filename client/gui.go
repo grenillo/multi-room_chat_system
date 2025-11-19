@@ -38,7 +38,7 @@ type GUI struct {
 //regex to detect URLs
 var urlRegex = regexp.MustCompile(`https?://[^\s]+`)
 
-func (g *GUI) Display(room string, text string) {
+func (g *GUI) Display(room string, text string, broadcast bool) {
 	if g.quitting {
 		return
 	}

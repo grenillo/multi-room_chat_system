@@ -238,17 +238,17 @@ func (m *Message) ExecuteClient(ui shared.ClientUI)() {
 	//check if message was sent
 	if !m.Response.Status {
 		//fmt.Println(m.Response.ErrMsg)
-		ui.Display(m.Response.CurrentRoom, m.Response.ErrMsg)
+		ui.Display(m.Response.CurrentRoom, m.Response.ErrMsg, false)
 		return
 	}
 	log.Println("client received:", m.Message.Content)
 	log.Println(m.Response.CurrentRoom)
 	if m.Image {
-		ui.Display(m.Response.CurrentRoom, formatImgMetadata(m.MsgMetadata))
+		ui.Display(m.Response.CurrentRoom, formatImgMetadata(m.MsgMetadata), false)
 		ui.DisplayImage(m.Response.CurrentRoom, m.Content)
 		return
 	}
-	ui.Display(m.Response.CurrentRoom, formatMessage(false, m.Message, nil))
+	ui.Display(m.Response.CurrentRoom, formatMessage(false, m.Message, nil), false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -259,21 +259,21 @@ type JoinCmd struct {
 func (j *JoinCmd) ExecuteServer() {}
 func (j *JoinCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !j.Reply.Status {
-		ui.Display(j.Reply.CurrentRoom, j.Reply.ErrMsg)
+		ui.Display(j.Reply.CurrentRoom, j.Reply.ErrMsg, false)
 		return
 	}
 	//clear local room history
 	ui.ClearRoom(j.Reply.CurrentRoom)
 	ui.SelectRoom(j.Reply.CurrentRoom)
-	ui.Display(j.Reply.CurrentRoom, "======= JOINED ROOM " + j.Room + " =======")
+	ui.Display(j.Reply.CurrentRoom, "======= JOINED ROOM " + j.Room + " =======", false)
 	//print out entire message history to client
 	for _, msg := range j.Reply.Log {
 		if msg.Image {
-			ui.Display(j.Reply.CurrentRoom, formatImgMetadata(msg.MsgMetadata))
+			ui.Display(j.Reply.CurrentRoom, formatImgMetadata(msg.MsgMetadata), false)
 			ui.DisplayImage(j.Reply.CurrentRoom, msg.Content)
 			continue
 		}
-		ui.Display(j.Reply.CurrentRoom, formatMessage(false, &msg, nil))
+		ui.Display(j.Reply.CurrentRoom, formatMessage(false, &msg, nil), false)
 		//fmt.Println(formatMessage(false, &msg, nil))
 	}
 }
@@ -287,7 +287,7 @@ type LeaveCmd struct {
 func (l *LeaveCmd) ExecuteServer() {}
 func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !l.Reply.Status {
-		ui.Display(l.Reply.CurrentRoom, l.Reply.ErrMsg)
+		ui.Display(l.Reply.CurrentRoom, l.Reply.ErrMsg, false)
 		return
 	}
 	//clear local room and lobby history
@@ -295,7 +295,7 @@ func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {
 	ui.ClearRoom(l.Room)
 	ui.ClearLobby()
 	ui.ShowLobby()
-	ui.Display("", "======= LEFT ROOM " + l.Room + " =======")
+	ui.Display("", "======= LEFT ROOM " + l.Room + " =======", false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -309,14 +309,14 @@ func (lu *ListUsersCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !lu.Reply.Status {
 		//fmt.Println(lu.Reply.ErrMsg)
 		log.Println("current room:", lu.Reply.CurrentRoom)
-		ui.Display(lu.Reply.CurrentRoom, lu.Reply.ErrMsg)
+		ui.Display(lu.Reply.CurrentRoom, lu.Reply.ErrMsg, false)
 		return
 	}
 	//if successful print the current room and its users to the client
 	//fmt.Println("=======CURRENT USERS IN ROOM ",lu.Reply.Room,"=======")
-	ui.Display(lu.Reply.CurrentRoom, "======= CURRENT USERS IN ROOM " + lu.Reply.Room + " =======")
+	ui.Display(lu.Reply.CurrentRoom, "======= CURRENT USERS IN ROOM " + lu.Reply.Room + " =======", false)
 	for _, user := range lu.Reply.Users {
-		ui.Display(lu.Reply.CurrentRoom, "\t" + user)
+		ui.Display(lu.Reply.CurrentRoom, "\t" + user, false)
 	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,13 +328,13 @@ type HelpCmd struct {
 func (h *HelpCmd) ExecuteServer() {}
 func (h *HelpCmd) ExecuteClient(ui shared.ClientUI)() {
 	if h.Invalid {
-		ui.Display(h.Reply.CurrentRoom, h.Reply.ErrMsg)
+		ui.Display(h.Reply.CurrentRoom, h.Reply.ErrMsg, false)
 		return
 	}
-	ui.Display(h.Reply.CurrentRoom, "======= USER COMMAND USAGE =======")
+	ui.Display(h.Reply.CurrentRoom, "======= USER COMMAND USAGE =======", false)
 	//print the commands for this user
 	for _, cmd := range h.Reply.Usage {
-		ui.Display(h.Reply.CurrentRoom, "\t" + cmd)
+		ui.Display(h.Reply.CurrentRoom, "\t" + cmd, false)
 	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -358,18 +358,18 @@ type KickBanCmd struct {
 func (kb *KickBanCmd) ExecuteServer() {}
 func (kb *KickBanCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !kb.Status {
-		ui.Display(kb.CurrentRoom, kb.ErrMsg)
+		ui.Display(kb.CurrentRoom, kb.ErrMsg, false)
 		return
 	}
 	if kb.Sender {
 		if kb.InRoom {
-			ui.Display(kb.CurrentRoom, formatMessage(false, &kb.Msg, nil))
+			ui.Display(kb.CurrentRoom, formatMessage(false, &kb.Msg, nil), false)
 		}
 		if kb.Ban {
-			ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was banned successfully")
+			ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was banned successfully", false)
 			return
 		}
-		ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was kicked successfully")
+		ui.Display(kb.CurrentRoom, "[SERVER] " + kb.User + " was kicked successfully", false)
 	} else {
 		ui.UserQuit(kb.ErrMsg)
 	}
@@ -382,7 +382,7 @@ type UnBanCmd struct {
 }
 func (u *UnBanCmd) ExecuteServer()() {}
 func (u *UnBanCmd) ExecuteClient(ui shared.ClientUI)() {
-	ui.Display(u.CurrentRoom, u.ErrMsg)
+	ui.Display(u.CurrentRoom, u.ErrMsg, false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -393,7 +393,7 @@ type CreateCmd struct {
 func (c *CreateCmd) ExecuteServer() {}
 func (c *CreateCmd) ExecuteClient(ui shared.ClientUI)() {
 	//fmt.Println(c.ErrMsg)
-	ui.Display(c.CurrentRoom, c.ErrMsg)
+	ui.Display(c.CurrentRoom, c.ErrMsg, false)
 	//if successful, update GUI
 	if c.Status {
 		ui.AddRoom(c.Room)
@@ -413,9 +413,9 @@ func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {
 		//fmt.Println("======= LEFT ROOM ", d.Room,"=======")
 		ui.ClearRoom(d.Room)
 		ui.DeselectRoom()
-		ui.Display(d.CurrentRoom, "======= LEFT ROOM " + d.Room + " =======")
+		ui.Display(d.CurrentRoom, "======= LEFT ROOM " + d.Room + " =======", false)
 	}
-	ui.Display(d.CurrentRoom, d.ErrMsg)
+	ui.Display(d.CurrentRoom, d.ErrMsg, false)
 	//if successful, update GUI
 	if d.Status {
 		ui.RemoveRoom(d.Room)
@@ -431,7 +431,7 @@ type PromoteDemoteCmd struct {
 func (p *PromoteDemoteCmd) ExecuteServer() {}
 func (p *PromoteDemoteCmd) ExecuteClient(ui shared.ClientUI)() {
 	//fmt.Println(p.ErrMsg)
-	ui.Display(p.CurrentRoom, p.ErrMsg)
+	ui.Display(p.CurrentRoom, p.ErrMsg, false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -443,11 +443,11 @@ func (b* BroadcastCmd) ExecuteServer() {}
 func (b* BroadcastCmd) ExecuteClient(ui shared.ClientUI)() {
 	//check if message was sent
 	if !b.Status {
-		ui.Display(b.CurrentRoom, b.ErrMsg)
+		ui.Display(b.CurrentRoom, b.ErrMsg, false)
 		return
 	}
 	//otherwise, print to our client's local terminal
-	ui.Display(b.CurrentRoom, formatMessage(true, nil, b.BroadcastCmd))
+	ui.Display(b.CurrentRoom, formatMessage(true, nil, b.BroadcastCmd), true)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -458,11 +458,11 @@ type ShutdownCmd struct {
 func (s *ShutdownCmd) ExecuteServer() {}
 func (s *ShutdownCmd) ExecuteClient(ui shared.ClientUI)() {
 	if !s.Status {
-		ui.Display(s.CurrentRoom, s.ErrMsg)
+		ui.Display(s.CurrentRoom, s.ErrMsg, false)
 		return
 	}
 	if s.Sender {
-		ui.Display(s.CurrentRoom, s.ErrMsg)
+		ui.Display(s.CurrentRoom, s.ErrMsg, false)
 	}
 	ui.UserQuit("SERVER IS NOW OFFLINE - You have been disconnected from the server")
 }
@@ -474,9 +474,9 @@ type ListRoomsCmd struct {
 }
 func (lr *ListRoomsCmd) ExecuteServer() {}
 func (lr *ListRoomsCmd) ExecuteClient(ui shared.ClientUI)() {
-	ui.Display(lr.CurrentRoom, "===================================================")
-	ui.Display(lr.CurrentRoom, lr.ErrMsg)
-	ui.Display(lr.CurrentRoom, "===================================================")
+	ui.Display(lr.CurrentRoom, "===================================================", false)
+	ui.Display(lr.CurrentRoom, lr.ErrMsg, false)
+	ui.Display(lr.CurrentRoom, "===================================================", false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -524,17 +524,17 @@ func formatMessage(broadcast bool, m *shared.Message, b *shared.BroadcastCmd) st
 		//convert timestamp to string
 		time := b.Timestamp.Format("2006-01-02 15:04:05")
 		if b.Flag {
-			resp = time + "\t" + b.UserName + b.Content
+			resp = time + "\t\t" + b.UserName + b.Content
 		} else {
-			resp = time + "\t" + b.UserName + ":  " + b.Content
+			resp = time + "\t\t" + b.UserName + ":   " + b.Content
 		}
 	} else {
 		//convert timestamp to string
 		time := m.Timestamp.Format("2006-01-02 15:04:05")
 		if m.Flag {
-			resp = time + "\t" + m.UserName + m.Content
+			resp = time + "\t\t" + m.UserName + m.Content
 		} else {
-			resp = time + "\t" + m.UserName + ":  " + m.Content
+			resp = time + "\t\t" + m.UserName + ":   " + m.Content
 		}
 	}
 	return resp

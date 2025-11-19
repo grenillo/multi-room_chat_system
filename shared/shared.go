@@ -10,7 +10,7 @@ type ExecutableMessage interface {
 }
 
 type ClientUI interface {
-	Display(room string, text string)
+	Display(room string, text string, broadcast bool)
 	ClearRoom(room string)
 	ClearLobby()
 	SelectRoom(room string)   // highlight/select a room in the list
