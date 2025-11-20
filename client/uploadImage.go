@@ -15,20 +15,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// GenerateImageLink takes a local filename and returns a unique HTTP link
-// that can later be served by your chat server.
+//GenerateImageLink takes a local filename and returns a unique HTTP link
 func GenerateImageLink(baseURL, filename string) (string, string) {
-    // Generate a random UUID
+    //generate a random UUID
     id := uuid.New().String()
 
-    // Extract the file extension (e.g. .png, .jpg)
+    //extract the file extension (e.g. .png, .jpg)
     ext := filepath.Ext(filename)
 
-    // Construct the link using baseURL + UUID + extension
+    //construct the link using baseURL + UUID + extension
     return fmt.Sprintf("%s/%s%s", baseURL, id, ext), id
 }
 
-// UploadImageToServer sends a file + UUID to the server's /upload endpoint
+//uploadImageToServer sends a file + UUID to the server's /upload endpoint
 func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
     // Open the original file
     file, err := os.Open(filePath)
@@ -37,23 +36,23 @@ func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
     }
     defer file.Close()
 
-    // Decode the image
+    //decode the image
     img, _, err := image.Decode(file)
     if err != nil {
         return "", fmt.Errorf("decode failed: %w", err)
     }
 
-    // Resize to max width 800px (height auto)
+    //resize to max width 800px
     resized := imaging.Resize(img, 800, 0, imaging.Lanczos)
 
-    // Encode to JPEG with quality 70
+    //encode to JPEG with quality 70
     buf := &bytes.Buffer{}
     err = jpeg.Encode(buf, resized, &jpeg.Options{Quality: 70})
     if err != nil {
         return "", fmt.Errorf("encode failed: %w", err)
     }
 
-    // Prepare multipart form
+    //prepare multipart form
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
 
@@ -63,7 +62,7 @@ func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
         return "", err
     }
 
-    // Add file field (always .jpg now)
+    //add file field (always .jpg now)
     part, err := writer.CreateFormFile("file", uuid+".jpg")
     if err != nil {
         return "", err
@@ -73,7 +72,7 @@ func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
         return "", err
     }
 
-    // Close writer
+    //close writer
     err = writer.Close()
     if err != nil {
         return "", err
@@ -96,7 +95,7 @@ func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
         return "", fmt.Errorf("upload failed: %s", resp.Status)
     }
 
-    // Build usable URL (always .jpg now)
+    //build usable URL
     usableURL := fmt.Sprintf("%s/uploads/%s.jpg", serverURL, uuid)
     return usableURL, nil
 }

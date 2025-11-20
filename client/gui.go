@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"github.com/google/uuid"
+    "fyne.io/fyne/v2/theme"
 )
 
 var loginWin fyne.Window
@@ -46,6 +47,11 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
     var box *fyne.Container
     var scroll *container.Scroll
 
+    c := theme.ColorNameForeground
+    if broadcast {
+        c = theme.ColorNameSuccess
+    }
+
     // Decide which container to append to
     if room == "" {
         box = g.lobbyBox
@@ -62,23 +68,7 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
         box = g.roomBoxes[room]
         scroll = g.chatScrolls[room]
     }
-    /*
-    //detect if broadcast
-    if broadcast {
-        // special styling for broadcasts
-        broadcastMsg := widget.NewRichText(
-            &widget.TextSegment{
-                Text:  text,
-                Style: widget.RichTextStyle{
-                    Inline:    true,
-                    TextStyle: fyne.TextStyle{Bold: true},
-                    ColorName: fyne.ThemeColorName("red"),
-                },
-            },
-        )
-        box.Add(broadcastMsg)
-    }
-    */
+
     //detect if text contains a URL
     if urlRegex.MatchString(text) {
         linkStr := urlRegex.FindString(text)
@@ -91,23 +81,44 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
             hyperlink.Wrapping = fyne.TextWrapOff
             //content := container.NewHBox(header, hyperlink)
             //color := "white"
-            bold := false
-            if broadcast {
-              //  color = "red"
-                bold = true
-            }
             rt := widget.NewRichText(
-                &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true, TextStyle: fyne.TextStyle{Bold: bold}}},
+                &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true, TextStyle: fyne.TextStyle{Bold: broadcast, Italic: broadcast}, ColorName: c}},
                 &widget.HyperlinkSegment{Text: parts[1], URL: parsed, Alignment: fyne.TextAlignLeading},
             )
             
             rt.Wrapping = fyne.TextWrapWord
             box.Add(rt)
         } else {
-            box.Add(widget.NewLabel(text)) // fallback
+            label := widget.NewRichText(
+                &widget.TextSegment{
+                    Text: text,
+                    Style: widget.RichTextStyle{
+                        ColorName: c,
+                    },
+                },
+            )
+            label.Wrapping = fyne.TextWrapWord
+            box.Add(label)
+            //box.Add(widget.NewLabel(text)) // fallback
         }
     } else {
+        /*
         label := widget.NewLabel(text)
+        label.Wrapping = fyne.TextWrapWord
+        */
+        label := widget.NewRichText(
+            &widget.TextSegment{
+                Text: text,
+                Style: widget.RichTextStyle{
+                    ColorName: c,
+                    TextStyle: fyne.TextStyle{
+                        Bold:   broadcast,
+                        Italic: broadcast,
+                    },
+                },
+                
+            },
+        )
         label.Wrapping = fyne.TextWrapWord
         box.Add(label)
     }
