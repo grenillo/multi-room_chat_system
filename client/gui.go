@@ -113,7 +113,7 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
     }
 
 
-    box.Refresh()
+    //box.Refresh()
     scroll.ScrollToBottom()
 }
 
@@ -210,7 +210,7 @@ func (g *GUI) DisplayJoin(room string, messages []shared.Message) {
     }
 
     // Refresh once at the end
-    box.Refresh()
+    //box.Refresh()
     scroll.ScrollToBottom()
 }
 
@@ -232,7 +232,6 @@ func (g *GUI) ensureRoom(room string) (*fyne.Container, *container.Scroll) {
     return g.roomBoxes[room], g.chatScrolls[room]
 }
 
-
 func (g *GUI) DisplayImage(room string, url string) {
     box, ok := g.roomBoxes[room]
     if !ok {
@@ -241,28 +240,41 @@ func (g *GUI) DisplayImage(room string, url string) {
         g.chatScrolls[room] = container.NewVScroll(box)
     }
 
-    // Ensure the URL is valid
     uri := storage.NewURI(url)
     if uri == nil {
         log.Println("Invalid URI for image:", url)
         box.Add(widget.NewLabel("Could not load image: " + url))
-        box.Refresh()
         return
     }
 
-    img := canvas.NewImageFromURI(uri)
-    img.FillMode = canvas.ImageFillContain
-    img.SetMinSize(fyne.NewSize(200, 200))
+    placeholder := widget.NewLabel("[loading image]")
+    box.Add(placeholder)
 
-    box.Add(img)
-    box.Refresh()
-    if scroll, ok := g.chatScrolls[room]; ok {
-        scroll.Refresh()
-        scroll.ScrollToBottom()
-    }
+    go func(uri fyne.URI, ph *widget.Label, box *fyne.Container) {
+        img := canvas.NewImageFromURI(uri)
+        img.FillMode = canvas.ImageFillContain
+        img.SetMinSize(fyne.NewSize(200, 200))
+
+        fyne.Do(func() {
+            idx := -1
+            for i, o := range box.Objects {
+                if o == ph {
+                    idx = i
+                    break
+                }
+            }
+            if idx >= 0 {
+                box.Objects[idx] = img
+            } else {
+                box.Add(img)
+            }
+            box.Refresh()
+            if scroll, ok := g.chatScrolls[room]; ok {
+                scroll.ScrollToBottom()
+            }
+        })
+    }(uri, placeholder, box)
 }
-
-
 
 func (g *GUI) ClearRoom(room string) {
     if b, ok := g.roomBoxes[room]; ok {
