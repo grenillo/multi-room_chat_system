@@ -52,7 +52,7 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
         c = theme.ColorNameSuccess
     }
 
-    // Decide which container to append to
+    //decide which container to append to
     if room == "" {
         box = g.lobbyBox
         scroll = g.lobbyScroll
@@ -99,13 +99,8 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
             )
             label.Wrapping = fyne.TextWrapWord
             box.Add(label)
-            //box.Add(widget.NewLabel(text)) // fallback
         }
     } else {
-        /*
-        label := widget.NewLabel(text)
-        label.Wrapping = fyne.TextWrapWord
-        */
         label := widget.NewRichText(
             &widget.TextSegment{
                 Text: text,
@@ -124,7 +119,6 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
     }
 
 
-    //box.Refresh()
     scroll.ScrollToBottom()
 }
 
@@ -178,50 +172,63 @@ func (g *GUI) DisplayJoin(room string, messages []shared.Message) {
             continue
         }
 
-        // Handle text
+        //handle text
         text := formatMessage(false, &msg, nil)
 
         if urlRegex.MatchString(text) {
             linkStr := urlRegex.FindString(text)
             parsed, err := url.Parse(linkStr)
             if err == nil {
+                //parse header
                 parts := strings.SplitN(text, ": ", 2)
+                //header := canvas.NewText(" " + parts[0] + ":", color.White)
+                hyperlink := widget.NewHyperlink(parts[1], parsed)
+                hyperlink.Wrapping = fyne.TextWrapOff
+                //content := container.NewHBox(header, hyperlink)
+                //color := "white"
                 rt := widget.NewRichText(
-                    &widget.TextSegment{
-                        Text:  parts[0] + ": ",
-                        Style: widget.RichTextStyle{
-                            Inline: true,
-                            // you can set Bold or ColorName here if needed
-                        },
-                    },
-                    &widget.HyperlinkSegment{
-                        Text: parts[1],
-                        URL:  parsed,
-                        Alignment: fyne.TextAlignLeading,
-                    },
+                    &widget.TextSegment{Text: parts[0] + ": ", Style: widget.RichTextStyle{Inline: true, }}, //TextStyle: fyne.TextStyle{Bold: false, Italic: false}, ColorName: c}},
+                    &widget.HyperlinkSegment{Text: parts[1], URL: parsed, Alignment: fyne.TextAlignLeading},
                 )
                 rt.Wrapping = fyne.TextWrapWord
                 box.Add(rt)
-                /*
-                prefix := widget.NewLabel(parts[0] + ": ")
-                link := widget.NewHyperlink(parts[1], parsed)
-                link.Wrapping = fyne.TextWrapOff
-                box.Add(container.NewHBox(prefix, link))
-                */
             } else {
-                lbl := widget.NewLabel(text)
-                lbl.Wrapping = fyne.TextWrapWord
-                box.Add(lbl)
+                label := widget.NewRichText(
+                &widget.TextSegment{
+                        Text: text,
+                        Style: widget.RichTextStyle{
+                            //ColorName: c,
+                            TextStyle: fyne.TextStyle{
+                                //Bold:   broadcast,
+                                //Italic: broadcast,
+                            },
+                        },
+                        
+                    },
+                )
+                label.Wrapping = fyne.TextWrapWord
+                box.Add(label)
             }
         } else {
-            lbl := widget.NewLabel(text)
-            lbl.Wrapping = fyne.TextWrapWord
-            box.Add(lbl)
+            label := widget.NewRichText(
+            &widget.TextSegment{
+                    Text: text,
+                    Style: widget.RichTextStyle{
+                        //ColorName: c,
+                        TextStyle: fyne.TextStyle{
+                            //Bold:   broadcast,
+                            //Italic: broadcast,
+                        },
+                    },
+                    
+                },
+            )
+            label.Wrapping = fyne.TextWrapWord
+            box.Add(label)
         }
     }
 
-    // Refresh once at the end
-    //box.Refresh()
+    //refresh once at the end
     scroll.ScrollToBottom()
 }
 
@@ -430,7 +437,6 @@ func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Win
 
 
 func TestWindow() {
-    //a := app.New()
     a := app.NewWithID("com.jonny.chatapp")
     loginWin = showLoginWindow(a, func(username string) {
         go func() {
@@ -498,8 +504,6 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
 	}
 	//create lobby box
 	gui.lobbyBox = container.NewVBox()
-    //gui.lobbyBox = container.NewStack()
-	//gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
     gui.lobbyScroll = container.NewVScroll(gui.lobbyBox)
 	gui.lobbyScroll.SetMinSize(fyne.NewSize(600, 400))
 
@@ -520,7 +524,6 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
             filePath := reader.URI().Path()
 
             go func() {
-                //uploadedURL, uuid := GenerateImageLink("localhost:8080/uploads", filePath)
                 uuid := uuid.New().String()
                 url, err := UploadImageToServer("http://localhost:8080", uuid, filePath)
                 if err != nil {
@@ -530,7 +533,7 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
                 log.Println("path:", filePath)
                 log.Println("url", url)
 
-                // Send the hosted URL as a chat message
+                //send the hosted URL as a chat message
                 adapter.Outgoing <- "img:" + url
             }()
         }, mainWin)
@@ -575,12 +578,12 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
 		selected := gui.rooms[id]
 		//functionality to make clicking on a room function as a join request
 		//only send /join if not already in this room
-    if gui.currentRoom != selected && selected != "" {
-        req := "/join " + selected
-        adapter.Outgoing <- req
-    }
-		
-		gui.currentRoom = gui.rooms[id] // <-- set the active room
+        if gui.currentRoom != selected && selected != "" {
+            req := "/join " + selected
+            adapter.Outgoing <- req
+        }
+		//set active room
+		gui.currentRoom = gui.rooms[id]
 
 		var rightSide *fyne.Container
 		if gui.currentRoom == "" {
