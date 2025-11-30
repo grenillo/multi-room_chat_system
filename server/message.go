@@ -525,25 +525,36 @@ func (d *DeleteCmd) ExecuteServer() {
 	if _, exists := s.rooms[d.Room]; !exists {
 		d.Status = false
 		d.ErrMsg = "PERMISSION DENIED: Room " + d.Room + " does not exist" 
+		log.Println(d.ErrMsg)
+		log.Println("current room after deleting:", d.CurrentRoom)
 		return
 	}
 	//once here room exists and user has the correct permission
 	if d.Room == s.users[d.UserName].CurrentRoom {
 		d.InRoom = true
+		log.Println("server side room before delete:", s.users[d.UserName].CurrentRoom)
 	}
 	//generate special leave cmd to send to users
 	force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: d.Timestamp, UserName: d.UserName, Flag: true }, Room: d.Room, Reply: shared.ResponseMD{Status: true}}}
 	//create live update object
 	rmUpdate := &RoomUpdate{RoomUpdate: &shared.RoomUpdate{Create: false, Room: d.Room}}
-	//send to all users in the room
-	for name, user := range s.rooms[d.Room].users {
-		//remove user from room state
-		remove(name, d.Room)
-		if name == d.UserName { //skip if self
+	for name, user := range s.users {
+		//if the user is in this room
+		if user.Active && user.CurrentRoom == d.Room {
+			//remove user from room state
+			remove(name, d.Room)
+			if name == d.UserName { //skip if self
+				continue
+			}
+			//notify they are no longer in that room
+			user.RecvServer <- force
+			//update user GUI
+			user.RecvServer <- rmUpdate
+			continue
+		} 
+		if !user.Active || name == d.UserName { //skip if self
 			continue
 		}
-		//notify they are no longer in that room
-		user.RecvServer <- force
 		//update user GUI
 		user.RecvServer <- rmUpdate
 	}
@@ -556,6 +567,7 @@ func (d *DeleteCmd) ExecuteServer() {
 
 	d.ErrMsg = "SERVER: Sucessfully deleted " + d.Room
 	d.Status = true
+	log.Println("server side room after delete:", s.users[d.UserName].CurrentRoom)
 }
 func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////

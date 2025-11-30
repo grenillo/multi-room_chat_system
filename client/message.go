@@ -415,12 +415,15 @@ type DeleteCmd struct {
 }
 func (d *DeleteCmd) ExecuteServer() {}
 func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {
+	if !d.Status {
+		log.Println("failed delete", "current room:", d.CurrentRoom)
+		ui.Display(d.CurrentRoom, d.ErrMsg, false)
+		return
+	}
 	if d.InRoom {
-		//ClearScreen()
-		//fmt.Println("======= LEFT ROOM ", d.Room,"=======")
 		ui.ClearRoom(d.Room)
 		ui.DeselectRoom()
-		ui.Display(d.CurrentRoom, "======= LEFT ROOM " + d.Room + " =======", false)
+		ui.Display("", "======= LEFT ROOM " + d.Room + " =======", false)
 	}
 	ui.Display(d.CurrentRoom, d.ErrMsg, false)
 	//if successful, update GUI

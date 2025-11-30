@@ -1,14 +1,11 @@
 package client
 
 import (
-	//"fmt"
-	//"image/color"
 	"log"
 	"multi-room_chat_system/shared"
 	"net/url"
 	"regexp"
 	"strings"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
@@ -54,6 +51,7 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
 
     //decide which container to append to
     if room == "" {
+        log.Println("using lobby box")
         box = g.lobbyBox
         scroll = g.lobbyScroll
     } else {
@@ -114,11 +112,11 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
                 
             },
         )
+        log.Println(label)
         label.Wrapping = fyne.TextWrapWord
         box.Add(label)
     }
-
-
+    box.Refresh()
     scroll.ScrollToBottom()
 }
 
@@ -295,7 +293,14 @@ func (g *GUI) DisplayImage(room string, url string) {
 }
 
 func (g *GUI) ClearRoom(room string) {
+    if room == "" {
+        g.lobbyBox.Objects = []fyne.CanvasObject{}
+        g.lobbyBox.Refresh()
+        g.lobbyScroll.Refresh()
+        return
+    }
     if b, ok := g.roomBoxes[room]; ok {
+        //b.Objects = nil
         b.Objects = nil
         b.Refresh()
     }
@@ -323,12 +328,28 @@ func (g *GUI) SelectRoom(room string) {
     }
 }
 
+/*
 func (g *GUI) DeselectRoom() {
 	g.currentRoom = ""
     if g.listView != nil {
         g.listView.Unselect(g.selectedID)
         g.selectedID = -1
     }
+}
+*/
+
+func (g *GUI) DeselectRoom() {
+    g.currentRoom = ""
+    if g.listView != nil {
+        g.listView.Unselect(g.selectedID)
+        g.selectedID = -1
+    }
+    g.ClearRoom("")
+    //rebuild the split with the lobby scroll
+    rightSide := container.NewBorder(nil, g.bottomBar, nil, nil, g.lobbyScroll)
+    split := container.NewHSplit(g.listView, rightSide)
+    split.Offset = 0.2
+    g.window.SetContent(split)
 }
 
 
