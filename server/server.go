@@ -17,29 +17,17 @@ type ServerState struct {
 	users map[string]*Member
 	//map roomName to chatRoom
 	rooms map[string]*Room
-	//logger
-	//logger *Logger
-	//server configuration
-	//config *Config
-	//server dispatcher
-	//dispatcher *Dispatcher
+	//file server for image support
 	fileServer *http.Server
-
+	//logger for server
+	logger []Log
 	//channels to receive/respond user joins 
 	recvUser chan ServerJoinRequest
 	joinResp chan *ServerJoinResponse
-
-	recvRoom chan *Room
+	
 	recvInput chan *shared.MsgMetadata
 	ackInput chan *shared.ExecutableMessage
-
 	term chan struct{}
-
-	//recvLogger chan *Logger
-	//recvDispatcher chan *Dispatcher
-
-	//channel to handle joining rooms
-	//recvJoinReq chan JoinRoomReq
 }
 
 //singleton instance for the server
@@ -65,28 +53,17 @@ func initServer() {
 		shutdownReq: false,
 		users: map[string]*Member{},
 		rooms: map[string]*Room{},
-		//logger: &Logger{},
-		//config: &Config{},
-		//dispatcher: &Dispatcher{},
 		//channels for joining users
 		recvUser: make(chan ServerJoinRequest),
 		joinResp: make(chan *ServerJoinResponse),
-
-		recvRoom: make(chan *Room),
 		//channels for message input
 		recvInput: make(chan *shared.MsgMetadata),
 		ackInput: make(chan *shared.ExecutableMessage),
 		term: make(chan struct{}),
-		//recvLogger: make(chan *Logger),
-		//recvDispatcher: make(chan *Dispatcher),
+		logger: make([]Log, 0),
 	}
-	//create initial rooms
-	//instance.createRoom("#general", RoleMember)
-	//instance.createRoom("#staff", RoleAdmin)
 	instance.fileServer = startFileServer()
 	instance.LoadFromDisk()
-	
-
 	//start goroutine to run server
 	go instance.run()	
 	
@@ -94,9 +71,8 @@ func initServer() {
 
 func(s *ServerState) run() {
 	//add admin
-	instance.users["owner"] = UserFactory("owner", RoleOwner)
-	instance.users["admin"] = UserFactory("admin", RoleAdmin)
-
+	//instance.users["owner"] = UserFactory("owner", RoleOwner)
+	//instance.users["admin"] = UserFactory("admin", RoleAdmin)
 	for{
 		select {
 		//server management of users
@@ -147,6 +123,10 @@ func(s *ServerState) run() {
 						}
 					}
 				}
+			}
+			//if status is true log that the user joined
+			if resp.Status {
+				s.logger = append(s.logger, logEvent(username + " joined the server", time.Now()))
 			}
 			//send response
 			s.joinResp <- &resp

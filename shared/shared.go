@@ -81,6 +81,8 @@ type LeaveCmd struct {
 	MsgMetadata
 	Room string
 	Reply ResponseMD
+	Staff bool
+	Log []string
 }
 
 type ListUsersCmd struct {
@@ -136,6 +138,7 @@ type DeleteCmd struct {
 	ResponseMD //for displaying error message if not having permission
 	Room string
 	InRoom bool
+	Log []string
 }
 
 type PromoteDemoteCmd struct {

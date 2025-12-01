@@ -328,16 +328,6 @@ func (g *GUI) SelectRoom(room string) {
     }
 }
 
-/*
-func (g *GUI) DeselectRoom() {
-	g.currentRoom = ""
-    if g.listView != nil {
-        g.listView.Unselect(g.selectedID)
-        g.selectedID = -1
-    }
-}
-*/
-
 func (g *GUI) DeselectRoom() {
     g.currentRoom = ""
     if g.listView != nil {

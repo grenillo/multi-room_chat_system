@@ -1,106 +1,109 @@
 package client
 
 import (
-	//"bufio"
+	"bufio"
 	"encoding/gob"
 	"fmt"
 	"io"
 	"log"
+	"net"
+	"strings"
 	"multi-room_chat_system/shared"
-	//"net"
-	//"os"
-	//"strings"
 )
 
-/*
-func StartClient() {
-	//register types with gob for tcp
+
+type ClientAdapter struct {
+    Conn     net.Conn
+    Incoming chan shared.ExecutableMessage
+    Outgoing chan string
+    Term     chan struct{}
+	Encoder *gob.Encoder
+	Decoder *gob.Decoder
+}
+
+func ConnectToServer(username string) (*ClientAdapter, string,  error){
+	//register gob
 	shared.Init()
 	//connect to the server
 	conn, err := net.Dial("tcp", "localhost:5461")
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-	fmt.Println("Connected to server:", conn.RemoteAddr())
+    if err != nil {
+        return nil, "", fmt.Errorf("could not connect: %w", err)
+    }
+	//client adapter type
+	adapter := &ClientAdapter{
+        Conn:      conn,
+        Encoder:   gob.NewEncoder(conn),
+        Decoder:   gob.NewDecoder(conn),
+        Incoming:  make(chan shared.ExecutableMessage),
+        Outgoing:  make(chan string),
+        Term:	   make(chan struct{}),
+    }
 
-	//channl for termination
-	term := make(chan struct{})
-	fmt.Println("Term chan created")
+	reader := bufio.NewReader(conn)
+	//server requests username
+	_, err = reader.ReadString('>')
+    if err != nil {
+        return nil, "", fmt.Errorf("login prompt read failed: %w", err)
+    }
+	// send username
+    _, err = conn.Write([]byte(username + "\n"))
+    if err != nil {
+        return nil, "", fmt.Errorf("failed sending username: %w", err)
+    }
+	// read login response
+    resp, err := reader.ReadString('>')
+	resp = strings.TrimSuffix(resp, "\n>")
+    if err != nil {
+        return nil, "", fmt.Errorf("failed reading login response: %w", err)
+    }
+	log.Println(resp)
+	//if user is banned
+    if strings.Contains(resp, "PERMISSION DENIED"){
+        return nil, resp, nil
+    }
+	//start goroutines to read/write from the GUI
+	go adapter.readLoop()
+    go adapter.writeLoop()
 
-	//read initial username prompt from server
-	serverReader := bufio.NewReader(conn)
-	prompt, _ := serverReader.ReadString('>')
-	prompt = strings.TrimSuffix(prompt, ">")
-	fmt.Print(prompt)
-	var username string
-	fmt.Scanln(&username)
-	//send to server
-	_, err = conn.Write([]byte(username + "\n"))
-	if err != nil {
-		fmt.Println("Failed to send username:", err)
-		close(term)
-		return
-	}
-	//read response
-	resp, _ := serverReader.ReadString('>')
-	resp = strings.TrimSuffix(resp, ">")
-	if strings.Contains(resp, "PERMISSION DENIED") {
-		fmt.Println(resp)
-		close(term)
-		return
-	}
-	ClearScreen()
-	fmt.Println(resp)
-	//create goroutines to continuously listen for input and server responses
-	go getInput(conn, term)
-	//fmt.Println("input stream created")
-	go outputFromServer(conn, term) // ensures recvExecutableMsg is used
-	//fmt.Println("output stream created")
-
-	//block main from immediately exiting
-	//fmt.Println("blocked from exiting")
-	<-term
-	//fmt.Println("unblocked from exiting")
-
+	return adapter, resp, nil
 }
 
-//read user input and send it to the server
-func getInput(conn net.Conn,  term chan struct{}) {
-	//create reader for this client
-	reader := bufio.NewReader(os.Stdin)
+//goroutine to send response to GUI to display for client
+func (c * ClientAdapter) readLoop() {
 	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading input:", err)
-			close(term)
-			return
-		}
-		input := strings.TrimSpace(line)
-		fmt.Println("sending to server input: ", input)
-		fmt.Fprintln(conn, input)
-	}
-}
-*/
-/*
-func outputFromServer(conn net.Conn, term chan struct{}) {
-	decoder := gob.NewDecoder(conn)
-	for {
-		select {
-		case <-term:
-			return
-		default:
-			//receive and decode executable message from server
-			msg := recvExecutableMsg(term, decoder)
+        select {
+        case <-c.Term:
+            return
+        default:
+            msg := recvExecutableMsg(c.Term, c.Decoder)
 			if msg == nil {
+				log.Println("client was terminated, do not forward nil to GUI")
+				continue
+			}
+			log.Println("client received wrapped type")
+            //err := c.Decoder.Decode(&msg)
+			log.Println("Decoded message:", msg)
+            c.Incoming <- msg
+        }
+    }
+}
+
+//writer goroutine
+func (c * ClientAdapter) writeLoop() {
+	for {
+        select {
+        case <-c.Term:
+            return
+        case outgoing := <-c.Outgoing:
+            _, err := c.Conn.Write([]byte(outgoing + "\n"))
+            if err != nil {
+                close(c.Term)
                 return
             }
-			//execute client-side logic sent from server state
-			msg.ExecuteClient()
-		}
-	}
+        }
+    }
 }
-*/
+
 
 func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage {
 	//create new message to return
@@ -133,7 +136,6 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 	case *shared.Message:
 		return &Message{Message: m}
 	case *shared.QuitCmd:
-		log.Println(&QuitCmd{QuitCmd: m}.Content)
 		return &QuitCmd{QuitCmd: m}
 	case *shared.KickBanCmd:
 		return &KickBanCmd{KickBanCmd: m}
@@ -159,3 +161,4 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
         panic("error during wrapping: unknown shared type")
     }
 }
+

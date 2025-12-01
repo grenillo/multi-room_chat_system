@@ -56,7 +56,7 @@ func UploadImageToServer(serverURL, uuid, filePath string) (string, error) {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
 
-    // Add UUID field
+    //add UUID field
     err = writer.WriteField("uuid", uuid)
     if err != nil {
         return "", err

@@ -302,6 +302,7 @@ func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {
 	ui.ClearRoom(l.Room)
 	ui.ClearLobby()
 	ui.ShowLobby()
+	printLog(l.Log, ui)
 	ui.Display("", "======= LEFT ROOM " + l.Room + " =======", false)
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -423,6 +424,7 @@ func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {
 	if d.InRoom {
 		ui.ClearRoom(d.Room)
 		ui.DeselectRoom()
+		printLog(d.Log, ui)
 		ui.Display("", "======= LEFT ROOM " + d.Room + " =======", false)
 	}
 	ui.Display(d.CurrentRoom, d.ErrMsg, false)
@@ -548,4 +550,11 @@ func formatMessage(broadcast bool, m *shared.Message, b *shared.BroadcastCmd) st
 		}
 	}
 	return resp
+}
+
+//helper function to display server logs
+func printLog(log []string, ui shared.ClientUI) {
+	for _, l := range log {
+		ui.Display("", l, false)
+	}
 }
