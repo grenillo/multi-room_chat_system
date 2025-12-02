@@ -130,6 +130,10 @@ func(s *ServerState) run() {
 			}
 			//send response
 			s.joinResp <- &resp
+			//if admin send log
+			if resp.Status && resp.Role.Role > RoleMember {
+				resp.Role.RecvServer <- &GetLog{&shared.GetLog{Log: s.formatLog()}}
+			}
 		//server receives raw input from a client
 		case input := <-s.recvInput:
 			//add timestamp to metadata

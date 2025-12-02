@@ -34,10 +34,6 @@ type JoinRoomReq struct { //client request to join a room (client -> server) or 
 	Resp chan JoinRoomResp //RPC listening on this channel (is only included bc passed from server to room)
 }
 
-type ServerToClient struct {
-	//empty for now
-}
-
 //ROOM TYPES
 type JoinRoomResp struct { //room response to join request (room -> client)
 	Status bool

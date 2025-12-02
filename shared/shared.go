@@ -42,6 +42,7 @@ func Init() {
 	gob.Register(&RoomUpdate{})
 	gob.Register(&UserUpdate{})
 	gob.Register(&UnBanCmd{})
+	gob.Register(&GetLog{})
 }
 
 type MsgMetadata struct {
@@ -172,4 +173,8 @@ type RoomUpdate struct {
 type UserUpdate struct {
 	Promote bool
 	Rooms []string
+}
+
+type GetLog struct {
+	Log []string
 }

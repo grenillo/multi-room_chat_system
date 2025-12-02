@@ -806,6 +806,14 @@ type UserUpdate struct {
 func (u *UserUpdate) ExecuteServer() {}
 func (u *UserUpdate) ExecuteClient(ui shared.ClientUI) {}
 
+//stubs for sending an admin the server log upon joining the server
+type GetLog struct {
+	*shared.GetLog
+}
+func (g *GetLog) ExecuteServer() {}
+func (g *GetLog) ExecuteClient(ui shared.ClientUI) {}
+
+
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {
 	for _, v := range container {
