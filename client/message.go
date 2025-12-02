@@ -296,6 +296,15 @@ func (u *UserUpdate) ExecuteClient(ui shared.ClientUI) {
 			ui.RemoveRoom(room)
 		}
 	}
+	if u.Promote {
+		if len(u.Log) > 0 {
+			printLog(u.Log, ui)
+		}
+	} else {
+		if u.Current == "" {
+			ui.ClearLobby()
+		}
+	}
 }
 
 type GetLog struct {
@@ -304,6 +313,16 @@ type GetLog struct {
 func (g *GetLog) ExecuteServer() {}
 func (g *GetLog) ExecuteClient(ui shared.ClientUI) {
 	printLog(g.Log, ui)
+}
+
+type UpdateLobby struct {
+	*shared.UpdateLobby
+}
+func (u *UpdateLobby) ExecuteServer() {}
+func (u *UpdateLobby) ExecuteClient(ui shared.ClientUI) {
+	temp := make([]string, 0)
+	temp = append(temp, u.Update)
+	printLog(temp, ui)
 }
 
 func ClearScreen() {

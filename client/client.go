@@ -159,6 +159,8 @@ func wrapShared(msg interface{}) shared.ExecutableMessage {
 		return &UserUpdate{UserUpdate: m}
 	case *shared.GetLog:
 		return &GetLog{GetLog: m}
+	case *shared.UpdateLobby:
+		return &UpdateLobby{UpdateLobby: m}
     default:
         panic("error during wrapping: unknown shared type")
     }

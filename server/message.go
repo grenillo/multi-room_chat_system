@@ -178,7 +178,7 @@ func (j *JoinCmd) ExecuteServer() {
 	if s.users[j.UserName].CurrentRoom != "" && j.Room != s.users[j.UserName].CurrentRoom {
 		//broadcast user leaving to other members in that room
 		broadcast(j.UserName, "left", j.Timestamp, s.users[j.UserName].CurrentRoom, "")
-		s.logger = append(s.logger, logEvent(j.UserName + " left " + s.users[j.UserName].CurrentRoom, j.Timestamp))
+		s.logger = append(s.logger, logEvent(j.UserName + " left " + s.users[j.UserName].CurrentRoom, j.Timestamp, j.UserName))
 		s.rooms[s.users[j.UserName].CurrentRoom].removeUser(s.users[j.UserName])
 	}
 	//add user to room
@@ -195,7 +195,7 @@ func (j *JoinCmd) ExecuteServer() {
 	j.Reply.Log = s.rooms[j.Room].log
 
 	//log that the user joined the room
-	s.logger = append(s.logger, logEvent(j.UserName + " joined " + j.Room, j.Timestamp))
+	s.logger = append(s.logger, logEvent(j.UserName + " joined " + j.Room, j.Timestamp, j.UserName))
 
 }
 func (j *JoinCmd) ExecuteClient(ui shared.ClientUI) {}
@@ -236,7 +236,7 @@ func (l *LeaveCmd) ExecuteServer() {
 	//update user state
 	l.Reply.Status = true
 	//log that the user left the room
-	s.logger = append(s.logger, logEvent(l.UserName + " left " + l.Room, l.Timestamp))
+	s.logger = append(s.logger, logEvent(l.UserName + " left " + l.Room, l.Timestamp, l.UserName))
 }
 
 func (l *LeaveCmd) ExecuteClient(ui shared.ClientUI)() {}
@@ -311,14 +311,14 @@ func (q *QuitCmd) ExecuteServer() {
 		room := s.users[q.UserName].CurrentRoom
 		remove(q.UserName, room)
 		broadcast(q.UserName, "left", q.Timestamp, room, "")
-		s.logger = append(s.logger, logEvent(q.UserName + " left " + room, q.Timestamp))
+		s.logger = append(s.logger, logEvent(q.UserName + " left " + room, q.Timestamp, q.UserName))
 	}
 	//set user status to false
 	s.users[q.UserName].Active = false
 	//close this connectionHandler once response is sent
 	safeClose(s.users[q.UserName].Term)
 	//log the user has left the server
-	s.logger = append(s.logger, logEvent(q.UserName + " left the server", q.Timestamp))
+	s.logger = append(s.logger, logEvent(q.UserName + " left the server", q.Timestamp, q.UserName))
 }
 func (q *QuitCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -381,12 +381,12 @@ func (kb *KickBanCmd) ExecuteServer() {
 				msg = formatStaffMsg(kb.UserName, "banned user: " + kb.User, kb.Timestamp)
 				update.ErrMsg = "You have been banned!"
 				//log ban
-				s.logger = append(s.logger, logEvent(kb.User + " banned by " + kb.UserName, kb.Timestamp))
+				s.logger = append(s.logger, logEvent(kb.User + " banned by " + kb.UserName, kb.Timestamp, kb.UserName))
 			} else {
 				msg = formatStaffMsg(kb.UserName, "kicked user: " + kb.User, kb.Timestamp)
 				update.ErrMsg = "You have been kicked!"
 				//log kick
-				s.logger = append(s.logger, logEvent(kb.User + " kicked by " + kb.UserName, kb.Timestamp))
+				s.logger = append(s.logger, logEvent(kb.User + " kicked by " + kb.UserName, kb.Timestamp, kb.UserName))
 			}
 			//if sender is in the same room as the specified user
 			if s.users[kb.UserName].CurrentRoom != "" && s.users[kb.UserName].CurrentRoom ==  s.users[kb.User].CurrentRoom {
@@ -448,7 +448,7 @@ func (u *UnBanCmd) ExecuteServer() {
 			broadcastToStaff(msg)
 			u.ErrMsg = "[SERVER] " + u.User + " successfully unbanned"
 			//log unban
-			s.logger = append(s.logger, logEvent(u.User + " unbanned by " + u.UserName, u.Timestamp))
+			s.logger = append(s.logger, logEvent(u.User + " unbanned by " + u.UserName, u.Timestamp, u.UserName))
 		}
 	}
 }
@@ -526,7 +526,7 @@ func (c *CreateCmd) ExecuteServer() {
 	c.Status = true
 	c.ErrMsg = "SERVER: room " + c.Room + " was successfully created"
 	//log room creation
-	s.logger = append(s.logger, logEvent(c.Room + " created by " + c.UserName, c.Timestamp))
+	s.logger = append(s.logger, logEvent(c.Room + " created by " + c.UserName, c.Timestamp, c.UserName))
 }
 func (c *CreateCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -609,7 +609,7 @@ func (d *DeleteCmd) ExecuteServer() {
 	d.Status = true
 	log.Println("server side room after delete:", s.users[d.UserName].CurrentRoom)
 	//log room deletion
-	s.logger = append(s.logger, logEvent(d.Room + " deleted by " + d.UserName, d.Timestamp))
+	s.logger = append(s.logger, logEvent(d.Room + " deleted by " + d.UserName, d.Timestamp, d.UserName))
 }
 func (d *DeleteCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -656,14 +656,17 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 	}
 	var action, newrole string
 	var role Role
-	update := &UserUpdate{UserUpdate: &shared.UserUpdate{Rooms: make([]string, 0)}}
+	update := &UserUpdate{UserUpdate: &shared.UserUpdate{Rooms: make([]string, 0), Current: s.users[p.User].CurrentRoom}}
 	if p.Promote {
 		action = "promoted"
 		newrole = "to admin"
 		role = RoleAdmin
 		update.Promote = true
 		//log user promotion
-		s.logger = append(s.logger, logEvent(p.User + " promoted by " + p.UserName, p.Timestamp))
+		s.logger = append(s.logger, logEvent(p.User + " promoted by " + p.UserName, p.Timestamp, p.UserName))
+		if s.users[p.User].CurrentRoom == "" {
+			update.Log = s.formatLog()
+		}
 	} else {
 		action = "demoted"
 		newrole = "to member"
@@ -676,7 +679,7 @@ func (p *PromoteDemoteCmd) ExecuteServer() {
 			remove(p.User, s.users[p.User].CurrentRoom)
 		}
 		//log user demotion
-		s.logger = append(s.logger, logEvent(p.User + " demoted by " + p.UserName, p.Timestamp))
+		s.logger = append(s.logger, logEvent(p.User + " demoted by " + p.UserName, p.Timestamp, p.UserName))
 	}
 	//promote member to admin
 	s.users[p.User].updateUserState(role, update)
@@ -768,7 +771,7 @@ func (sh *ShutdownCmd) ExecuteServer() {
 		user.RecvServer <- shutdown
 	}
 	//log shutdown
-	s.logger = append(s.logger, logEvent("Server shutdown by owner", sh.Timestamp))
+	s.logger = append(s.logger, logEvent("Server shutdown by owner", sh.Timestamp, sh.UserName))
 }
 func (sh *ShutdownCmd) ExecuteClient(ui shared.ClientUI)() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -823,6 +826,12 @@ type GetLog struct {
 func (g *GetLog) ExecuteServer() {}
 func (g *GetLog) ExecuteClient(ui shared.ClientUI) {}
 
+
+type UpdateLobby struct {
+	*shared.UpdateLobby
+}
+func (u *UpdateLobby) ExecuteServer() {}
+func (u *UpdateLobby) ExecuteClient(ui shared.ClientUI) {}
 
 //HELPER FUNCTIONS
 func contains(container []string, value string) bool {
@@ -924,3 +933,4 @@ func isImageURL(link string) bool {
     contentType := resp.Header.Get("Content-Type")
     return strings.HasPrefix(contentType, "image/")
 }
+

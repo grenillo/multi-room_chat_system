@@ -126,7 +126,7 @@ func(s *ServerState) run() {
 			}
 			//if status is true log that the user joined
 			if resp.Status {
-				s.logger = append(s.logger, logEvent(username + " joined the server", time.Now()))
+				s.logger = append(s.logger, logEvent(username + " joined the server", time.Now(), username))
 			}
 			//send response
 			s.joinResp <- &resp
