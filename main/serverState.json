@@ -88,6 +88,34 @@
      "Content": " left #general",
      "Image": false,
      "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:49.275544-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:49.725539-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:50.191028-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:50.626177-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
     }
    ]
   },
@@ -122,8 +150,100 @@
      "Content": "hello!",
      "Image": false,
      "Flag": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:48.794258-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:49.275544-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:49.725539-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:50.191028-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:50.626177-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T20:34:53.659676-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
     }
    ]
   }
- }
+ },
+ "Log": [
+  {
+   "Event": "owner joined the server",
+   "Timestamp": "2025-12-01T20:34:46.245909-05:00"
+  },
+  {
+   "Event": "owner joined #staff",
+   "Timestamp": "2025-12-01T20:34:48.794258-05:00"
+  },
+  {
+   "Event": "owner left #staff",
+   "Timestamp": "2025-12-01T20:34:49.275544-05:00"
+  },
+  {
+   "Event": "owner joined #general",
+   "Timestamp": "2025-12-01T20:34:49.275544-05:00"
+  },
+  {
+   "Event": "owner left #general",
+   "Timestamp": "2025-12-01T20:34:49.725539-05:00"
+  },
+  {
+   "Event": "owner joined #staff",
+   "Timestamp": "2025-12-01T20:34:49.725539-05:00"
+  },
+  {
+   "Event": "owner left #staff",
+   "Timestamp": "2025-12-01T20:34:50.191028-05:00"
+  },
+  {
+   "Event": "owner joined #general",
+   "Timestamp": "2025-12-01T20:34:50.191028-05:00"
+  },
+  {
+   "Event": "owner left #general",
+   "Timestamp": "2025-12-01T20:34:50.626177-05:00"
+  },
+  {
+   "Event": "owner joined #staff",
+   "Timestamp": "2025-12-01T20:34:50.626177-05:00"
+  },
+  {
+   "Event": "owner left #staff",
+   "Timestamp": "2025-12-01T20:34:53.659676-05:00"
+  },
+  {
+   "Event": "Server shutdown by owner",
+   "Timestamp": "2025-12-01T20:34:58.739785-05:00"
+  }
+ ]
 }

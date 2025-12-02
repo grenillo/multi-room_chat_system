@@ -32,11 +32,12 @@ type PersistMessage struct {
 type PersistState struct {
 	Users map[string]PersistUser
 	Rooms map[string]PersistRoom
+	Log []Log
 }
 
 func (s *ServerState) SaveToDisk() error {
 	//define persistent state
-	p := PersistState{Users: make(map[string]PersistUser), Rooms: make(map[string]PersistRoom)}
+	p := PersistState{Users: make(map[string]PersistUser), Rooms: make(map[string]PersistRoom), Log: make([]Log, 0)}
 	//convert current users to the persistent user state
 	for name, user := range s.users {
 		p.Users[name] = PersistUser{Username: name, Role: user.Role}
@@ -52,6 +53,8 @@ func (s *ServerState) SaveToDisk() error {
 		//save information to persistent state
 		p.Rooms[name] = roomInfo
 	}
+	//add logger to persistent state
+	p.Log = append(p.Log, s.logger...)
 	//encode persistent state as JSON
 	data, err := json.MarshalIndent(p, "", " ")
 	if err != nil {
@@ -88,5 +91,8 @@ func (s *ServerState) LoadFromDisk() error {
 		//add room back to server state
 		s.rooms[name] = r
 	}
+	//rebuild logger
+	s.logger = append(s.logger, p.Log...)
+	
 	return nil
 }
