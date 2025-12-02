@@ -339,6 +339,11 @@ func (kb *KickBanCmd) ExecuteServer() {
 	//set user after verifying it exists
 	parts := strings.Fields(kb.Content)
 	kb.User = parts[1]
+	if kb.User == kb.UserName {
+		kb.Status = false
+		kb.ErrMsg = "PERMISSION DENIED: Cannot kick/ban self"
+		return
+	}
 	//first check user's role to see if they can execute
 	if (s.users[kb.UserName].Role < RoleAdmin) {
 		kb.Status = false
@@ -419,6 +424,11 @@ func (u *UnBanCmd) ExecuteServer() {
 	//set user after verifying it exists
 	parts := strings.Fields(u.Content)
 	u.User = parts[1]
+	if u.User == u.UserName {
+		u.Status = false
+		u.ErrMsg = "PERMISSION DENIED: Incorrect usage, cannot unban self"
+		return
+	}
 	//first check user's role to see if they can execute
 	if (s.users[u.UserName].Role < RoleAdmin) {
 		u.Status = false

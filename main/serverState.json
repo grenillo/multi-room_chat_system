@@ -12,10 +12,6 @@
    "Username": "owner",
    "Role": 3
   },
-  "u": {
-   "Username": "u",
-   "Role": 1
-  },
   "user": {
    "Username": "user",
    "Role": 1
@@ -27,93 +23,37 @@
    "Permission": 1,
    "Log": [
     {
-     "Username": "admin",
-     "Timestamp": "2025-11-18T21:21:00.118731-05:00",
-     "Content": " joined #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "admin",
-     "Timestamp": "2025-11-18T21:21:06.04684-05:00",
-     "Content": "hello #general!",
-     "Image": false,
-     "Flag": false
-    },
-    {
-     "Username": "admin",
-     "Timestamp": "2025-11-18T21:21:10.201095-05:00",
-     "Content": " left #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "u",
-     "Timestamp": "2025-11-18T21:21:24.743128-05:00",
-     "Content": " joined #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "u",
-     "Timestamp": "2025-11-18T21:21:28.027675-05:00",
-     "Content": "hello!",
-     "Image": false,
-     "Flag": false
-    },
-    {
-     "Username": "u",
-     "Timestamp": "2025-11-18T21:21:33.825444-05:00",
-     "Content": " left #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
      "Username": "owner",
-     "Timestamp": "2025-11-18T21:21:44.102019-05:00",
+     "Timestamp": "2025-12-01T21:12:12.206489-05:00",
      "Content": " joined #general",
      "Image": false,
      "Flag": true
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-11-18T21:21:46.316632-05:00",
-     "Content": "hello!",
-     "Image": false,
+     "Timestamp": "2025-12-01T21:12:18.926379-05:00",
+     "Content": "http://localhost:8080/uploads/7aa96198-13cb-4507-9949-1be823f385cf.jpg",
+     "Image": true,
      "Flag": false
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-11-18T21:21:47.433634-05:00",
+     "Timestamp": "2025-12-01T21:12:22.102149-05:00",
      "Content": " left #general",
      "Image": false,
      "Flag": true
     },
     {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:49.275544-05:00",
+     "Username": "user",
+     "Timestamp": "2025-12-01T21:13:33.226862-05:00",
      "Content": " joined #general",
      "Image": false,
      "Flag": true
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:49.725539-05:00",
-     "Content": " left #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:50.191028-05:00",
+     "Timestamp": "2025-12-01T21:13:35.503847-05:00",
      "Content": " joined #general",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:50.626177-05:00",
-     "Content": " left #general",
      "Image": false,
      "Flag": true
     }
@@ -124,71 +64,64 @@
    "Permission": 2,
    "Log": [
     {
-     "Username": "admin",
-     "Timestamp": "2025-11-18T21:21:10.201095-05:00",
+     "Username": "owner",
+     "Timestamp": "2025-12-01T21:12:22.102149-05:00",
      "Content": " joined #staff",
      "Image": false,
      "Flag": true
     },
     {
-     "Username": "admin",
-     "Timestamp": "2025-11-18T21:21:15.697928-05:00",
-     "Content": "hi #staff!",
+     "Username": "owner",
+     "Timestamp": "2025-12-01T21:12:26.651464-05:00",
+     "Content": "hello staff!",
      "Image": false,
      "Flag": false
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-11-18T21:21:47.433634-05:00",
+     "Timestamp": "2025-12-01T21:12:44.484558-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-01T21:12:49.312665-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-01T21:12:54.709514-05:00",
+     "Content": "hello owner!",
+     "Image": false,
+     "Flag": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-01T21:12:56.120303-05:00",
      "Content": " joined #staff",
      "Image": false,
      "Flag": true
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-11-18T21:21:49.598469-05:00",
+     "Timestamp": "2025-12-01T21:12:59.452471-05:00",
      "Content": "hello!",
      "Image": false,
      "Flag": false
     },
     {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:48.794258-05:00",
-     "Content": " joined #staff",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:49.275544-05:00",
+     "Username": "user",
+     "Timestamp": "2025-12-01T21:13:09.946527-05:00",
      "Content": " left #staff",
      "Image": false,
      "Flag": true
     },
     {
      "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:49.725539-05:00",
-     "Content": " joined #staff",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:50.191028-05:00",
-     "Content": " left #staff",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:50.626177-05:00",
-     "Content": " joined #staff",
-     "Image": false,
-     "Flag": true
-    },
-    {
-     "Username": "owner",
-     "Timestamp": "2025-12-01T20:34:53.659676-05:00",
+     "Timestamp": "2025-12-01T21:13:15.604856-05:00",
      "Content": " left #staff",
      "Image": false,
      "Flag": true
@@ -199,51 +132,79 @@
  "Log": [
   {
    "Event": "owner joined the server",
-   "Timestamp": "2025-12-01T20:34:46.245909-05:00"
-  },
-  {
-   "Event": "owner joined #staff",
-   "Timestamp": "2025-12-01T20:34:48.794258-05:00"
-  },
-  {
-   "Event": "owner left #staff",
-   "Timestamp": "2025-12-01T20:34:49.275544-05:00"
+   "Timestamp": "2025-12-01T21:12:09.240769-05:00"
   },
   {
    "Event": "owner joined #general",
-   "Timestamp": "2025-12-01T20:34:49.275544-05:00"
+   "Timestamp": "2025-12-01T21:12:12.206489-05:00"
   },
   {
    "Event": "owner left #general",
-   "Timestamp": "2025-12-01T20:34:49.725539-05:00"
+   "Timestamp": "2025-12-01T21:12:22.102149-05:00"
   },
   {
    "Event": "owner joined #staff",
-   "Timestamp": "2025-12-01T20:34:49.725539-05:00"
+   "Timestamp": "2025-12-01T21:12:22.102149-05:00"
+  },
+  {
+   "Event": "user joined the server",
+   "Timestamp": "2025-12-01T21:12:37.328796-05:00"
   },
   {
    "Event": "owner left #staff",
-   "Timestamp": "2025-12-01T20:34:50.191028-05:00"
+   "Timestamp": "2025-12-01T21:12:44.484558-05:00"
+  },
+  {
+   "Event": "user promoted by owner",
+   "Timestamp": "2025-12-01T21:12:47.567-05:00"
+  },
+  {
+   "Event": "user joined #staff",
+   "Timestamp": "2025-12-01T21:12:49.312665-05:00"
+  },
+  {
+   "Event": "owner joined #staff",
+   "Timestamp": "2025-12-01T21:12:56.120303-05:00"
+  },
+  {
+   "Event": "#room created by user",
+   "Timestamp": "2025-12-01T21:13:05.459312-05:00"
+  },
+  {
+   "Event": "user left #staff",
+   "Timestamp": "2025-12-01T21:13:09.946527-05:00"
+  },
+  {
+   "Event": "user joined #room",
+   "Timestamp": "2025-12-01T21:13:09.946527-05:00"
+  },
+  {
+   "Event": "owner left #staff",
+   "Timestamp": "2025-12-01T21:13:15.604856-05:00"
+  },
+  {
+   "Event": "owner joined #room",
+   "Timestamp": "2025-12-01T21:13:15.604856-05:00"
+  },
+  {
+   "Event": "#room deleted by owner",
+   "Timestamp": "2025-12-01T21:13:23.783863-05:00"
+  },
+  {
+   "Event": "user demoted by owner",
+   "Timestamp": "2025-12-01T21:13:29.533646-05:00"
+  },
+  {
+   "Event": "user joined #general",
+   "Timestamp": "2025-12-01T21:13:33.226862-05:00"
   },
   {
    "Event": "owner joined #general",
-   "Timestamp": "2025-12-01T20:34:50.191028-05:00"
-  },
-  {
-   "Event": "owner left #general",
-   "Timestamp": "2025-12-01T20:34:50.626177-05:00"
-  },
-  {
-   "Event": "owner joined #staff",
-   "Timestamp": "2025-12-01T20:34:50.626177-05:00"
-  },
-  {
-   "Event": "owner left #staff",
-   "Timestamp": "2025-12-01T20:34:53.659676-05:00"
+   "Timestamp": "2025-12-01T21:13:35.503847-05:00"
   },
   {
    "Event": "Server shutdown by owner",
-   "Timestamp": "2025-12-01T20:34:58.739785-05:00"
+   "Timestamp": "2025-12-01T21:13:39.528703-05:00"
   }
  ]
 }
