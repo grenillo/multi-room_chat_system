@@ -61,7 +61,7 @@ func defMember(username string, role Role) *Member {
 			ToServer: make(chan shared.MsgMetadata),
 			RecvServer: make(chan shared.ExecutableMessage),
 			Term: make(chan struct{}),
-			Permissions: []string{"/join", "/leave", "/listusers", "/help", "/quit"},		
+			Permissions: []string{"/join", "/leave", "/listusers", "/listrooms", "/help", "/quit"},		
 		}
 	}
 }
@@ -69,14 +69,14 @@ func defMember(username string, role Role) *Member {
 //function to define admin
 func defAdmin(username string, role Role) *Member {
 	member := *defMember(username, role)
-	member.Permissions = append(member.Permissions, "/kick", "/ban", "/unban", "/createRoom", "/deleteRoom")
+	member.Permissions = append(member.Permissions, "/kick", "/ban", "/unban","/create", "/delete", "/broadcast")
 	return &member
 }
 
 //function to define owner
 func defOwner(username string, role Role) *Member {
 	admin := *defAdmin(username, role)
-	admin.Permissions = append(admin.Permissions, "/promote", "/demote")
+	admin.Permissions = append(admin.Permissions, "/promote", "/demote", "/shutdown")
 	return &admin
 }
 
@@ -102,21 +102,16 @@ func UserFactory(name string, role Role) *Member {
 func getUsage(role Role) []string {
 	var usage []string
 	if role >= RoleMember {
-		usage = append(usage, "/join {room}")
-		usage = append(usage, "/leave")
-		usage = append(usage, "/listusers")
+		member := []string{"/join {room}", "/leave", "/listusers", "/listrooms", "/help", }
+		usage = append(usage, member...)
 	}
 	if role >= RoleAdmin {
-		usage = append(usage, "/kick {user}")
-		usage = append(usage, "/ban {user}")
-		usage = append(usage, "/unban {user}")
-		usage = append(usage, "/create {roomName} {rolePermission: all or staff}")
-		usage = append(usage, "/delete {roomName}")
-		usage = append(usage, "/broadcast {msg}")
+		admin := []string{"/kick", "/ban", "/unban","/create", "/delete", "/broadcast"}
+		usage = append(usage, admin...)
 	}
 	if role >= RoleOwner {
-		usage = append(usage, "/promote {user}")
-		usage = append(usage, "/demote {user}")
+		owner := []string{"/promote", "/demote", "/shutdown"}
+		usage = append(usage, owner...)
 	}
 	usage = append(usage, "/quit")
 	return usage
