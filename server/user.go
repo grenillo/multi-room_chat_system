@@ -106,11 +106,11 @@ func getUsage(role Role) []string {
 		usage = append(usage, member...)
 	}
 	if role >= RoleAdmin {
-		admin := []string{"/kick", "/ban", "/unban","/create", "/delete", "/broadcast"}
+		admin := []string{"/kick {user}", "/ban {user}", "/unban {user}","/create {room} {all or staff}", "/delete {room}", "/broadcast {message}"}
 		usage = append(usage, admin...)
 	}
 	if role >= RoleOwner {
-		owner := []string{"/promote", "/demote", "/shutdown"}
+		owner := []string{"/promote {user}", "/demote {user}", "/shutdown"}
 		usage = append(usage, owner...)
 	}
 	usage = append(usage, "/quit")

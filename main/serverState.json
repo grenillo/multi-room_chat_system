@@ -7,18 +7,157 @@
   "owner": {
    "Username": "owner",
    "Role": 3
+  },
+  "user": {
+   "Username": "user",
+   "Role": 1
   }
  },
  "Rooms": {
   "#general": {
    "Name": "#general",
    "Permission": 1,
-   "Log": []
+   "Log": [
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:39:11.903677-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-12-04T18:39:16.762806-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:39:28.671512-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:39:39.956069-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-12-04T18:39:46.164562-05:00",
+     "Content": "http://localhost:8080/uploads/4c22cf60-b62f-4697-be66-cac8b1b29d36.jpg",
+     "Image": true,
+     "Flag": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:39:54.737801-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:40:00.043734-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-12-04T18:40:02.448864-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:41:16.1939-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:42:20.383658-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "user",
+     "Timestamp": "2025-12-04T18:42:25.677537-05:00",
+     "Content": " left #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:44:09.112844-05:00",
+     "Content": " joined #general",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:44:17.617615-05:00",
+     "Content": "https://copilot.microsoft.com/chats/NmkWEUcwCusX7TD4dHBXi",
+     "Image": false,
+     "Flag": false
+    }
+   ]
   },
   "#staff": {
    "Name": "#staff",
    "Permission": 2,
-   "Log": []
+   "Log": [
+    {
+     "Username": "admin",
+     "Timestamp": "2025-12-04T18:41:17.702528-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:41:19.195378-05:00",
+     "Content": " joined #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "admin",
+     "Timestamp": "2025-12-04T18:43:00.818334-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:43:56.809531-05:00",
+     "Content": "google.com",
+     "Image": false,
+     "Flag": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:44:05.944066-05:00",
+     "Content": "www.google.com",
+     "Image": false,
+     "Flag": false
+    },
+    {
+     "Username": "owner",
+     "Timestamp": "2025-12-04T18:44:09.112844-05:00",
+     "Content": " left #staff",
+     "Image": false,
+     "Flag": true
+    }
+   ]
   }
  },
  "Log": [
@@ -45,6 +184,134 @@
   {
    "Event": "Server shutdown by owner",
    "Timestamp": "2025-12-02T19:35:38.415432-05:00"
+  },
+  {
+   "Event": "owner joined the server",
+   "Timestamp": "2025-12-04T18:36:59.923654-05:00"
+  },
+  {
+   "Event": "admin joined the server",
+   "Timestamp": "2025-12-04T18:37:12.598073-05:00"
+  },
+  {
+   "Event": "user joined the server",
+   "Timestamp": "2025-12-04T18:38:42.625287-05:00"
+  },
+  {
+   "Event": "user joined #general",
+   "Timestamp": "2025-12-04T18:39:11.903677-05:00"
+  },
+  {
+   "Event": "admin joined #general",
+   "Timestamp": "2025-12-04T18:39:16.762806-05:00"
+  },
+  {
+   "Event": "user left #general",
+   "Timestamp": "2025-12-04T18:39:28.671512-05:00"
+  },
+  {
+   "Event": "user joined #general",
+   "Timestamp": "2025-12-04T18:39:39.956069-05:00"
+  },
+  {
+   "Event": "owner joined #general",
+   "Timestamp": "2025-12-04T18:39:54.737801-05:00"
+  },
+  {
+   "Event": "owner left #general",
+   "Timestamp": "2025-12-04T18:40:00.043734-05:00"
+  },
+  {
+   "Event": "admin left #general",
+   "Timestamp": "2025-12-04T18:40:02.448864-05:00"
+  },
+  {
+   "Event": "#room created by owner",
+   "Timestamp": "2025-12-04T18:40:41.284459-05:00"
+  },
+  {
+   "Event": "#room2 created by admin",
+   "Timestamp": "2025-12-04T18:40:48.891133-05:00"
+  },
+  {
+   "Event": "user promoted by owner",
+   "Timestamp": "2025-12-04T18:41:03.87306-05:00"
+  },
+  {
+   "Event": "#room2 deleted by owner",
+   "Timestamp": "2025-12-04T18:41:13.608255-05:00"
+  },
+  {
+   "Event": "user left #general",
+   "Timestamp": "2025-12-04T18:41:16.1939-05:00"
+  },
+  {
+   "Event": "user joined #room",
+   "Timestamp": "2025-12-04T18:41:16.1939-05:00"
+  },
+  {
+   "Event": "admin joined #staff",
+   "Timestamp": "2025-12-04T18:41:17.702528-05:00"
+  },
+  {
+   "Event": "owner joined #staff",
+   "Timestamp": "2025-12-04T18:41:19.195378-05:00"
+  },
+  {
+   "Event": "#room deleted by owner",
+   "Timestamp": "2025-12-04T18:41:26.659243-05:00"
+  },
+  {
+   "Event": "user demoted by owner",
+   "Timestamp": "2025-12-04T18:41:47.777375-05:00"
+  },
+  {
+   "Event": "user kicked by owner",
+   "Timestamp": "2025-12-04T18:42:00.94395-05:00"
+  },
+  {
+   "Event": "user joined the server",
+   "Timestamp": "2025-12-04T18:42:15.985222-05:00"
+  },
+  {
+   "Event": "user joined #general",
+   "Timestamp": "2025-12-04T18:42:20.383658-05:00"
+  },
+  {
+   "Event": "user banned by owner",
+   "Timestamp": "2025-12-04T18:42:25.677537-05:00"
+  },
+  {
+   "Event": "user unbanned by owner",
+   "Timestamp": "2025-12-04T18:42:44.326444-05:00"
+  },
+  {
+   "Event": "user joined the server",
+   "Timestamp": "2025-12-04T18:42:49.077293-05:00"
+  },
+  {
+   "Event": "admin left #staff",
+   "Timestamp": "2025-12-04T18:43:00.818334-05:00"
+  },
+  {
+   "Event": "user left the server",
+   "Timestamp": "2025-12-04T18:43:29.123456-05:00"
+  },
+  {
+   "Event": "user joined the server",
+   "Timestamp": "2025-12-04T18:43:37.632645-05:00"
+  },
+  {
+   "Event": "owner left #staff",
+   "Timestamp": "2025-12-04T18:44:09.112844-05:00"
+  },
+  {
+   "Event": "owner joined #general",
+   "Timestamp": "2025-12-04T18:44:09.112844-05:00"
+  },
+  {
+   "Event": "Server shutdown by owner",
+   "Timestamp": "2025-12-04T18:44:42.417486-05:00"
   }
  ]
 }

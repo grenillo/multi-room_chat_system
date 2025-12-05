@@ -573,6 +573,7 @@ func (d *DeleteCmd) ExecuteServer() {
 	force := &LeaveCmd{LeaveCmd: &shared.LeaveCmd{ MsgMetadata: shared.MsgMetadata{ Timestamp: d.Timestamp, UserName: d.UserName, Flag: true }, Room: d.Room, Reply: shared.ResponseMD{Status: true}}}
 	//create live update object
 	rmUpdate := &RoomUpdate{RoomUpdate: &shared.RoomUpdate{Create: false, Room: d.Room}}
+	s.removeRoom(d.Room)
 	for name, user := range s.users {
 		//if the user is in this room
 		if user.Active && user.CurrentRoom == d.Room {
@@ -934,3 +935,16 @@ func isImageURL(link string) bool {
     return strings.HasPrefix(contentType, "image/")
 }
 
+
+func (s *ServerState) removeRoom(name string) {
+	//loop through all users
+	for _, user := range s.users {
+		//loop through all users joinable rooms
+		for i, room := range user.AvailableRooms {
+			if room == name {
+				user.AvailableRooms = append(user.AvailableRooms[:i], user.AvailableRooms[i+1:]...)
+                break // stop after removing
+			}
+		}
+	}
+}
