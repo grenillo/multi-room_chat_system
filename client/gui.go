@@ -447,7 +447,7 @@ func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Win
 }
 
 
-func TestWindow() {
+func StartGUI() {
     a := app.NewWithID("com.jonny.chatapp")
     loginWin = showLoginWindow(a, func(username string) {
         go func() {
