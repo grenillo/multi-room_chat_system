@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//message factory, takes in message metadata and the server state, returns an executableMessage
 func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	//error check
 	if len(input.Content) == 0 {
@@ -27,6 +28,7 @@ func MessageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableM
 	}
 }
 
+//image factory, takes in message metadata and the server state, returns an executableMessage
 func ImageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
     content := strings.TrimSpace(input.Content)
     //trim "img:" prefix
@@ -61,7 +63,7 @@ func ImageFactory(input shared.MsgMetadata, s *ServerState) shared.ExecutableMes
     return msg
 }
 
-
+//command factory, takes in message metadata and the server state, returns an executableMessage
 func CommandFactory (input shared.MsgMetadata, s *ServerState) shared.ExecutableMessage {
 	parts := strings.Fields(input.Content)
 	//set the args part of the metadata

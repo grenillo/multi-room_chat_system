@@ -4,6 +4,7 @@ import (
 	"multi-room_chat_system/shared"
 )
 
+//room state
 type Room struct {
 	//active users
 	users map[string]*Member
@@ -13,6 +14,7 @@ type Room struct {
 	permission Role
 }
 
+//broadcast to all users in a room
 func (rm *Room) broadcast(msg *Message, sender string) {
 	for username, member := range rm.users {
 		//dont send self username, do not send sender username
@@ -24,10 +26,12 @@ func (rm *Room) broadcast(msg *Message, sender string) {
     }
 }
 
+//add a user to the room state
 func (rm *Room) addUser(user *Member) {
 	rm.users[user.Username] = user
 }
 
+//remove a user from the room state
 func (rm *Room) removeUser(user *Member) {
 	delete(rm.users, user.Username)
 }

@@ -88,7 +88,7 @@ func (c * ClientAdapter) readLoop() {
     }
 }
 
-//writer goroutine
+//goroutine to send input from GUI to server-side connection handler
 func (c * ClientAdapter) writeLoop() {
 	for {
         select {
@@ -105,6 +105,7 @@ func (c * ClientAdapter) writeLoop() {
 }
 
 
+//function that decodes response from the server to be usable by the client
 func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.ExecutableMessage {
 	//create new message to return
 	var msg interface{}
@@ -123,6 +124,7 @@ func recvExecutableMsg(term chan struct{}, decoder *gob.Decoder) shared.Executab
 	return wrapShared(msg)
 }
 
+//function that converts server-side executable to client-side executable
 func wrapShared(msg interface{}) shared.ExecutableMessage {
 	switch m := msg.(type) {
     case *shared.HelpCmd:

@@ -4,18 +4,6 @@ import (
 	"multi-room_chat_system/shared"
 )
 
-
-type AdminReq struct {
-	Action AdminRequest
-	Reply chan AdminResponse
-}
-
-type AdminResponse struct {
-	Members []*Member
-    Banned  []*User
-    Rooms   []*Room
-}
-
 type User struct {
 	Username string
 	Role Role
@@ -99,6 +87,7 @@ func UserFactory(name string, role Role) *Member {
 	}
 }
 
+//function that returns the usage of each member's commands when they enter /help
 func getUsage(role Role) []string {
 	var usage []string
 	if role >= RoleMember {
@@ -132,6 +121,7 @@ func getRooms(role Role) []string {
 	return rooms
 }
 
+//function that updates the user's role based on a promote/demote
 func (m *Member) updateUserState(role Role, update *UserUpdate) {
 	//get available rooms based on role
 	newSet := getRooms(role)
@@ -155,6 +145,7 @@ func (m *Member) updateUserState(role Role, update *UserUpdate) {
 	m.Role = role
 }
 
+//helper function to get the difference in rooms between two slices
 func difference(a, b []string) []string {
     //build a lookup map for b
     m := make(map[string]struct{}, len(b))
@@ -172,7 +163,7 @@ func difference(a, b []string) []string {
     return diff
 }
 
-//helper functions 
+//helper function that gets the symmetric difference of rooms between two slices
 func getRoomChanges(a, b []string) []string {
     diffAB := difference(a, b) // removed
     diffBA := difference(b, a) // added

@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+//helper function to extract the uuid and file extension
 func ExtractUUIDFromLink(link string) (string, string, error) {
     u, err := url.Parse(link)
     if err != nil {
@@ -31,10 +33,12 @@ func ExtractUUIDFromLink(link string) (string, string, error) {
     return uuid, ext, nil
 }
 
+//create an image link for an uploaded image
 func MakeImageLink(baseURL, uuid, ext string) string {
     return fmt.Sprintf("%s/uploads/%s.%s", baseURL, uuid, ext)
 }
 
+//upload the image to the local file server
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
     err := r.ParseMultipartForm(10 << 20) // 10 MB max
     if err != nil {

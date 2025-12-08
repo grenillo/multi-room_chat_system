@@ -99,6 +99,7 @@ func handleConnection(reader *bufio.Reader, conn net.Conn, user *Member) {
 
 }
 
+//function to continuously intercept user input from GUI
 func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 	s := GetServerState()
 	for {
@@ -126,6 +127,7 @@ func getUserInput(reader *bufio.Reader, user *Member, userInput chan string) {
 	}
 }
 
+//function to forward the server response to the client
 func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
 	//unwrap the server to the shared type to send to client
 	concrete := unwrapShared(msg)
@@ -138,6 +140,7 @@ func forwardToClient(encoder *gob.Encoder, msg shared.ExecutableMessage) error {
     return nil
 }
 
+//extract raw data (the shared type) from server response to be sent to the client
 func unwrapShared(msg interface{}) interface{} {
     switch m := msg.(type) {
     case *HelpCmd:
@@ -181,7 +184,7 @@ func unwrapShared(msg interface{}) interface{} {
     }
 }
 
-
+//safely close the client's termination channels
 func safeClose(ch chan struct{}) {
     select {
     case <-ch:

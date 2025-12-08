@@ -29,12 +29,14 @@ type PersistMessage struct {
 	Flag bool
 }
 
+//type for persisting our server state
 type PersistState struct {
 	Users map[string]PersistUser
 	Rooms map[string]PersistRoom
 	Log []Log
 }
 
+//function that writes our server state to a file
 func (s *ServerState) SaveToDisk() error {
 	//define persistent state
 	p := PersistState{Users: make(map[string]PersistUser), Rooms: make(map[string]PersistRoom), Log: make([]Log, 0)}
@@ -64,6 +66,7 @@ func (s *ServerState) SaveToDisk() error {
 	return os.WriteFile("serverState.json", data, 0644)
 }
 
+//function that loads our server state from a file
 func (s *ServerState) LoadFromDisk() error {
 	//read from the serverState file
 	data, err := os.ReadFile("serverState.json")

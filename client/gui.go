@@ -19,6 +19,7 @@ import (
 
 var loginWin fyne.Window
 
+//define the client's GUI state
 type GUI struct {
 	quitting 	bool
     roomBoxes   map[string]*fyne.Container
@@ -37,6 +38,7 @@ type GUI struct {
 //regex to detect URLs
 var urlRegex = regexp.MustCompile(`https?://[^\s]+`)
 
+//gui function to display single line output from the server
 func (g *GUI) Display(room string, text string, broadcast bool) {
 	if g.quitting {
 		return
@@ -120,6 +122,7 @@ func (g *GUI) Display(room string, text string, broadcast bool) {
     scroll.ScrollToBottom()
 }
 
+//gui function to display multi-line output from the server after a user joins
 func (g *GUI) DisplayJoin(room string, messages []shared.Message) {
     if g.quitting {
         return
@@ -230,9 +233,7 @@ func (g *GUI) DisplayJoin(room string, messages []shared.Message) {
     scroll.ScrollToBottom()
 }
 
-
-
-// Helper to ensure room containers exist
+//helper gui function to ensure room containers exist
 func (g *GUI) ensureRoom(room string) (*fyne.Container, *container.Scroll) {
     if room == "" {
         return g.lobbyBox, g.lobbyScroll
@@ -248,6 +249,7 @@ func (g *GUI) ensureRoom(room string) (*fyne.Container, *container.Scroll) {
     return g.roomBoxes[room], g.chatScrolls[room]
 }
 
+//gui function used to display a .jpg image when it is sent by the server
 func (g *GUI) DisplayImage(room string, url string) {
     box, ok := g.roomBoxes[room]
     if !ok {
@@ -292,6 +294,7 @@ func (g *GUI) DisplayImage(room string, url string) {
     }(uri, placeholder, box)
 }
 
+//gui function used to clear the room's box (message history) after leaving
 func (g *GUI) ClearRoom(room string) {
     if room == "" {
         g.lobbyBox.Objects = []fyne.CanvasObject{}
@@ -309,12 +312,14 @@ func (g *GUI) ClearRoom(room string) {
     }
 }
 
+//gui function used to clear the lobby's room box after leaving the lobby
 func (g *GUI) ClearLobby() {
 	g.lobbyBox.RemoveAll()
     g.lobbyBox.Refresh()
     g.lobbyScroll.Refresh()
 }
 
+//gui function used to select the user's room from the side panel
 func (g *GUI) SelectRoom(room string) {
 	g.currentRoom = room
     if g.listView != nil {
@@ -328,6 +333,7 @@ func (g *GUI) SelectRoom(room string) {
     }
 }
 
+//gui function used to deselect the user's room from the side pannel
 func (g *GUI) DeselectRoom() {
     g.currentRoom = ""
     if g.listView != nil {
@@ -342,7 +348,7 @@ func (g *GUI) DeselectRoom() {
     g.window.SetContent(split)
 }
 
-
+//gui function used to set the rooms on the GUI side pannel
 func (g *GUI) SetRooms(rooms []string) {
     g.rooms = rooms
 	//initialize per-room containers
@@ -356,6 +362,7 @@ func (g *GUI) SetRooms(rooms []string) {
     g.listView.Refresh()
 }
 
+//gui function used to add a room to the side pannel after a create operation
 func (g *GUI) AddRoom(room string) {
     g.rooms = append(g.rooms, room)
 	//initialize room containers
@@ -367,6 +374,7 @@ func (g *GUI) AddRoom(room string) {
     g.listView.Refresh()
 }
 
+//gui function used to remove a room to the side pannel after a delete operation
 func (g *GUI) RemoveRoom(room string) {
     for i, r := range g.rooms {
         if r == room {
@@ -377,6 +385,7 @@ func (g *GUI) RemoveRoom(room string) {
     g.listView.Refresh()
 }
 
+//gui function used to display the lobby after the user leaves a room
 func (g *GUI) ShowLobby() {
     rightSide := container.NewBorder(nil, g.bottomBar, nil, nil, g.lobbyScroll)
     split := container.NewHSplit(g.listView, rightSide)
@@ -384,6 +393,7 @@ func (g *GUI) ShowLobby() {
     g.window.SetContent(split)
 }
 
+//gui function to display an end of session message to the user after a quit/kick/ban/shutdown
 func (g *GUI) UserQuit(msg string) {
     g.quitting = true
     //close the main chat window
@@ -415,7 +425,7 @@ func (g *GUI) UserQuit(msg string) {
 
 
 
-// callback will be used to start the actual chat window
+//displays the login window for the user, will determine if they are showed the main window or the banned window based on server state
 func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Window {
     loginWin := a.NewWindow("Login")
 
@@ -446,7 +456,7 @@ func showLoginWindow(a fyne.App, connectCallback func(username string)) fyne.Win
 	return loginWin
 }
 
-
+//function used to start the client's GUI
 func StartGUI() {
     a := app.NewWithID("com.jonny.chatapp")
     loginWin = showLoginWindow(a, func(username string) {
@@ -485,7 +495,7 @@ func StartGUI() {
     a.Run()
 }
 
-
+//function used to deny a client access from the server
 func ShowBannedWindow(a fyne.App, message string) {
     w := a.NewWindow("Access Denied")
     w.Resize(fyne.NewSize(300, 150))
@@ -501,6 +511,7 @@ func ShowBannedWindow(a fyne.App, message string) {
     w.Show()
 }
 
+//displays the main window a user interacts with after they join the server successfully
 func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []string) *GUI{
     mainWin := a.NewWindow("Multi-Room Chat")
     mainWin.Resize(fyne.NewSize(1200, 800))
@@ -640,7 +651,7 @@ func MainWindow(a fyne.App, username string, adapter *ClientAdapter, rooms []str
 	return gui
 }
 
-
+//helper function used to get the user's starting rooms to be displayed on the GUI
 func getInitRooms(msg string) []string {
 	//strip the prefix
 	parts := strings.SplitN(msg, ":", 2)

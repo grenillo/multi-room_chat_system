@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"multi-room_chat_system/shared"
-	//"fyne.io/fyne/v2/internal/widget"
 )
 
 /////////////////////////////// MESSAGE and its execute functions ///////////////////////////////

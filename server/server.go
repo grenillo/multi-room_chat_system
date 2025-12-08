@@ -184,6 +184,7 @@ func (s *ServerState) RecvMessage(input *shared.MsgMetadata, reply *shared.Execu
 	return nil
 }
 
+//helper function to get the user's joinable rooms
 func getJoinableRooms(user *Member) string {
 	temp := "Available rooms:"
 	for _, room := range user.AvailableRooms {
@@ -193,10 +194,11 @@ func getJoinableRooms(user *Member) string {
 	return temp 
 }
 
+//function starts the local http file server so we can handle images
 func startFileServer() *http.Server {
     mux := http.NewServeMux()
 
-    // Serve static files from ./uploads
+    //serve static files from ./uploads
     fs := http.FileServer(http.Dir("./uploads"))
     mux.Handle("/uploads/", http.StripPrefix("/uploads/", fs))
 

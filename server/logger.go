@@ -17,6 +17,7 @@ func logEvent(event string, time time.Time, sender string) Log {
 	return log
 }
 
+//helper function that formats the log before it is saved
 func (s *ServerState) formatLog() []string {
 	log := []string{}
 	s = GetServerState()
@@ -30,6 +31,7 @@ func (s *ServerState) formatLog() []string {
 	return log
 }
 
+//function that broadcasts a log event to all admin users not in a room
 func broadcastStaffLobby(sender string, log Log) {
 	s := GetServerState()
 	for name, user := range s.users {
