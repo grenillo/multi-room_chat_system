@@ -1,3 +1,7 @@
+PRIOR TO DEPLOYING:
+    run "go mod tidy" into a terminal while in the /multi-room_chat_system file,
+    this will ensure all libraries are installed to run this project
+
 How to deploy:
 
     1. To use the multi-room chat system you must first ensure your terminal is in the ./multi-room_chat_system/main
